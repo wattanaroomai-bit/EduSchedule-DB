@@ -468,15 +468,15 @@
                 </div>
                 <div>
                     <label class="block text-sm font-bold mb-1">ชม./สัปดาห์</label>
-                    <input type="number" id="subj-hrWeek" class="w-full border p-2 rounded" value="1">
+                    <input type="number" step="any" id="subj-hrWeek" class="w-full border p-2 rounded" value="1">
                 </div>
                 <div>
                     <label class="block text-sm font-bold mb-1">ชม./ภาค</label>
-                    <input type="number" id="subj-hrSem" class="w-full border p-2 rounded" value="20">
+                    <input type="number" step="any" id="subj-hrSem" class="w-full border p-2 rounded" value="20">
                 </div>
                 <div>
                     <label class="block text-sm font-bold mb-1">ชม./ปี</label>
-                    <input type="number" id="subj-hrYear" class="w-full border p-2 rounded" value="40">
+                    <input type="number" step="any" id="subj-hrYear" class="w-full border p-2 rounded" value="40" oninput="autoCalculateHours(this.value)">
                 </div>
                 <div class="col-span-2">
                     <label class="block text-sm font-bold mb-1">ครูผู้สอน</label>
@@ -1149,6 +1149,17 @@
         }
         function closeSubjectModal() { document.getElementById('subject-modal').classList.add('hidden'); }
 
+        function autoCalculateHours(yearValue) {
+            const hrYear = parseFloat(yearValue);
+            if (!isNaN(hrYear)) {
+                document.getElementById('subj-hrSem').value = (hrYear / 2);
+                document.getElementById('subj-hrWeek').value = (hrYear / 40);
+            } else {
+                document.getElementById('subj-hrSem').value = '';
+                document.getElementById('subj-hrWeek').value = '';
+            }
+        }
+
         function saveSubjectForm() {
             let id = document.getElementById('subj-id').value;
             let data = {
@@ -1158,9 +1169,9 @@
                 shortName: document.getElementById('subj-short').value,
                 type: document.getElementById('subj-type').value,
                 class: document.getElementById('subj-class').value,
-                hrWeek: parseInt(document.getElementById('subj-hrWeek').value),
-                hrSem: parseInt(document.getElementById('subj-hrSem').value),
-                hrYear: parseInt(document.getElementById('subj-hrYear').value),
+                hrWeek: parseFloat(document.getElementById('subj-hrWeek').value) || 0,
+                hrSem: parseFloat(document.getElementById('subj-hrSem').value) || 0,
+                hrYear: parseFloat(document.getElementById('subj-hrYear').value) || 0,
                 teacherId: document.getElementById('subj-teacher').value
             };
             if(!data.name) return showToast("กรุณาใส่ชื่อวิชา", "error");

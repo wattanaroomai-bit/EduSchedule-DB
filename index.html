@@ -15,26 +15,24 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
         
-        /* A4 Landscape Styling (Strict Enforce for Preview and Image Export) */
+        /* A4 Landscape Styling (Strict Enforce 1122px x 793px for Perfect Export) */
         .a4-landscape { 
-            width: 297mm; 
-            height: 210mm; /* บังคับความสูงตายตัวสำหรับ A4 */
-            min-width: 297mm;
-            min-height: 210mm; 
+            width: 1122px; 
+            height: 793px; 
             margin: 0 auto; 
             background: white; 
-            padding: 10mm 15mm; 
+            padding: 40px 50px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             position: relative; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-sizing: border-box; /* ควบคุมสัดส่วนไม่ให้ล้นขอบเด็ดขาด */
+            box-sizing: border-box;
             overflow: hidden;
         }
         
         .table-bold { border-collapse: collapse; width: 100%; color: black; }
-        .table-bold th, .table-bold td { border: 2px solid black !important; padding: 4px 2px; text-align: center; }
+        .table-bold th, .table-bold td { border: 2px solid black !important; padding: 4px; text-align: center; }
         .table-bold th { background-color: #e5e7eb; font-weight: bold; }
         
         /* Mobile Wallpaper Strict 9:16 Setup */
@@ -77,8 +75,6 @@
             .a4-landscape { 
                 width: 100% !important; 
                 height: 100% !important;
-                min-width: 0 !important; 
-                min-height: 0 !important; 
                 padding: 0 !important; 
             }
             @page { size: A4 landscape; margin: 10mm; }
@@ -218,7 +214,7 @@
                 <div class="overflow-x-auto bg-gray-200 p-8 flex justify-center">
                     <div id="printable-area" class="a4-landscape">
                         <div>
-                            <div class="text-center mb-6">
+                            <div class="text-center mb-4">
                                 <h2 class="text-2xl font-bold" id="print-title">ตารางเรียน</h2>
                                 <h3 class="text-lg" id="print-subtitle">ภาคเรียนที่ - ปีการศึกษา - โรงเรียน -</h3>
                             </div>
@@ -373,8 +369,8 @@
                     <div class="bg-white p-4 rounded shadow">
                         <h3 class="font-bold text-lg mb-4">จัดการภาพตารางสอน (มือถือ)</h3>
                         
-                        <label class="block mb-2 font-bold">เลือกห้องเรียน:</label>
-                        <select id="wallpaper-class" class="w-full border p-2 rounded mb-4" onchange="renderMobileWallpaper()">
+                        <label class="block mb-2 font-bold">เลือกครูผู้สอน:</label>
+                        <select id="wallpaper-teacher" class="w-full border p-2 rounded mb-4" onchange="renderMobileWallpaper()">
                             <!-- Injected via JS -->
                         </select>
 
@@ -880,6 +876,17 @@
                         }
                     }
 
+                    // Migration for empty roomSchedule - Auto assign rooms if not set
+                    if (Object.keys(appData.roomSchedule).length === 0 && Object.keys(appData.schedule).length > 0) {
+                        for (let k in appData.schedule) {
+                            const cls = k.split('_')[0];
+                            const defaultRoom = appData.rooms.find(r => r.name.includes(cls));
+                            if (defaultRoom) {
+                                appData.roomSchedule[k] = defaultRoom.id;
+                            }
+                        }
+                    }
+
                     // Force Subject Update if empty (Migration safety)
                     if(!appData.subjects || appData.subjects.length < 50) {
                         appData.subjects = defaultData.subjects;
@@ -973,7 +980,10 @@
             let buildHtml = '';
             appData.classes.forEach(c => buildHtml += `<option value="${c}">ชั้น ${c}</option>`);
             document.getElementById('build-class-select').innerHTML = buildHtml;
-            document.getElementById('wallpaper-class').innerHTML = buildHtml;
+
+            let wallpaperTeacherHtml = '';
+            appData.teachers.forEach(t => wallpaperTeacherHtml += `<option value="${t.id}">${t.name}</option>`);
+            document.getElementById('wallpaper-teacher').innerHTML = wallpaperTeacherHtml;
 
             let subjTeacherHtml = '';
             appData.teachers.forEach(t => subjTeacherHtml += `<option value="${t.id}">${t.short} (${t.name})</option>`);
@@ -1004,6 +1014,7 @@
             }
 
             if(tabId === 'view-schedule') renderTimetableView();
+            if(tabId === 'mobile-wallpaper') renderMobileWallpaper();
             if(tabId === 'build-schedule') renderBuilder();
         }
 
@@ -1043,7 +1054,7 @@
             document.getElementById('sig-director-name').innerText = appData.settings.director;
 
             // Header Row 1 (ชื่อคาบ)
-            let html = `<thead><tr><th rowspan="2" class="w-1/12 border-2 border-black p-1">วัน</th><th rowspan="2" class="w-1/12 border-2 border-black p-1">โฮมรูม<br><span class="text-[10px] font-normal">08.00-08.30</span></th>`;
+            let html = `<thead><tr><th rowspan="2" class="w-[8%] border-2 border-black p-1">วัน</th><th rowspan="2" class="w-[8%] border-2 border-black p-1 leading-tight">โฮมรูม<br><span class="text-[10px] font-normal">08.00-08.30</span></th>`;
             appData.periods.forEach(p => {
                 html += `<th class="border-2 border-black p-1">${p.name}</th>`;
             });
@@ -1051,17 +1062,17 @@
             
             // Header Row 2 (เวลา)
             appData.periods.forEach(p => {
-                html += `<th class="text-[10px] font-normal border-2 border-black p-1">${p.start} - ${p.end} น.</th>`;
+                html += `<th class="text-[10px] font-normal border-2 border-black p-1 whitespace-nowrap">${p.start} - ${p.end} น.</th>`;
             });
             html += `</tr></thead><tbody>`;
 
             appData.days.forEach((day, dayIndex) => {
-                html += `<tr><td class="font-bold border-2 border-black p-1">${day}</td>`;
+                html += `<tr><td class="font-bold border-2 border-black p-1 bg-white text-center">${day}</td>`;
                 
                 // โฮมรูม (ผสานเซลล์แนวตั้งในวันแรก)
                 if (dayIndex === 0) {
-                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 align-middle text-center border-2 border-black w-1/12 p-0">
-                                <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; white-space: nowrap;" class="font-bold text-blue-900 text-sm inline-block">กิจกรรมหน้าเสาธงและโฮมรูม</div>
+                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 border-2 border-black text-center p-0 align-middle">
+                                <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; padding: 10px 0;" class="font-bold text-blue-900 text-sm inline-block">กิจกรรมหน้าเสาธงและโฮมรูม</div>
                              </td>`;
                 }
                 
@@ -1073,8 +1084,8 @@
                     // ถ้าเป็นเวลาพัก
                     if (p.isBreak) { 
                         if (dayIndex === 0) {
-                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 align-middle text-center border-2 border-black w-1/12 p-0">
-                                        <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; white-space: nowrap;" class="font-bold text-gray-700 text-sm inline-block">${p.breakName || 'พัก'}</div>
+                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 border-2 border-black text-center p-0 align-middle w-[6%]">
+                                        <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; padding: 10px 0;" class="font-bold text-gray-700 text-sm inline-block">${p.breakName || 'พัก'}</div>
                                      </td>`;
                         }
                         continue; 
@@ -1105,21 +1116,20 @@
                         });
                         if(cellKey) {
                             subjectObj = { ...getSubject(appData.schedule[cellKey]) };
-                            subjectObj.showClass = cellKey.split('_')[0]; 
+                            displayClass = cellKey.split('_')[0]; 
                             actualTeacherId = target;
                             const roomId = appData.roomSchedule[cellKey];
                             if(roomId) displayRoom = getRoom(roomId);
                         }
                     } else if (type === 'room') {
-                        const rKey = Object.keys(appData.roomSchedule).find(k => k.endsWith(`_${day}_${p.id}`) && appData.roomSchedule[k] === target);
-                        if(rKey) {
-                            const cls = rKey.split('_')[0];
-                            const subjId = appData.schedule[rKey];
-                            if (subjId) {
-                                subjectObj = { ...getSubject(subjId) };
-                                subjectObj.showClass = cls;
-                            } else {
-                                subjectObj = { name: 'จองห้อง', showClass: cls, teacherId: null };
+                        const rKeys = Object.keys(appData.roomSchedule).filter(k => k.endsWith(`_${day}_${p.id}`) && appData.roomSchedule[k] === target);
+                        if(rKeys.length > 0) {
+                            let classes = rKeys.map(k => k.split('_')[0]).join(', ');
+                            let subj = getSubject(appData.schedule[rKeys[0]]);
+                            subjectObj = subj ? { ...subj } : { name: 'ใช้ห้อง', shortName: 'ใช้ห้อง' };
+                            subjectObj.showClass = classes;
+                            if(rKeys.length > 1) {
+                                 subjectObj.shortName = 'ใช้งานร่วม';
                             }
                         }
                     }
@@ -1162,7 +1172,10 @@
 
                             const currentRoomId = displayRoom ? displayRoom.id : null;
 
-                            if (nextSubjObj && nextSubjObj.id === subjectObj.id && nextActualTeacherId === actualTeacherId && nextRoomId === currentRoomId) {
+                            // ในหน้าตารางห้อง จะผสานต่อเมื่อเป็นวิชาเดียวกัน (เพื่อความเรียบง่าย)
+                            if (type === 'room' && nextSubjObj && nextSubjObj.id === subjectObj.id) {
+                                colspan++;
+                            } else if (type !== 'room' && nextSubjObj && nextSubjObj.id === subjectObj.id && nextActualTeacherId === actualTeacherId && nextRoomId === currentRoomId) {
                                 colspan++;
                             } else {
                                 break;
@@ -1175,14 +1188,12 @@
                     if (subjectObj) {
                         let teacher = actualTeacherId ? getTeacher(actualTeacherId) : null;
                         let subText = type === 'class' ? (teacher ? teacher.short : '') : subjectObj.showClass;
-                        let roomText = (type !== 'room' && displayRoom) ? `<br><span class="text-[10px] text-red-600 font-bold whitespace-nowrap leading-none mt-0.5">(${displayRoom.name})</span>` : '';
+                        let roomText = (type !== 'room' && displayRoom) ? `<div style="font-size: 10px; color: #dc2626; font-weight: bold; margin-top: 1px;">(${displayRoom.name})</div>` : '';
 
-                        html += `<td colspan="${colspan}" class="p-1 font-medium bg-white border-2 border-black align-middle" style="height: 75px; max-height: 75px;">
-                                    <div class="flex flex-col justify-center items-center w-full h-full px-1 overflow-hidden">
-                                        <span class="text-[12px] font-bold text-blue-900 leading-[1.2] line-clamp-2 w-full break-words text-center">${subjectObj.shortName || subjectObj.name}</span>
-                                        <span class="text-[10px] text-gray-600 leading-none mt-1 truncate w-full text-center">${subText}</span>
-                                        ${roomText}
-                                    </div>
+                        html += `<td colspan="${colspan}" class="bg-white border-2 border-black align-middle text-center" style="height: 75px; padding: 4px; overflow: hidden; word-break: break-word;">
+                                    <div style="font-size: 12px; font-weight: bold; color: #1e3a8a; line-height: 1.25;">${subjectObj.shortName || subjectObj.name}</div>
+                                    <div style="font-size: 11px; color: #4b5563; margin-top: 3px; line-height: 1;">${subText}</div>
+                                    ${roomText}
                                  </td>`;
                     } else {
                         html += `<td class="text-gray-300 bg-white border-2 border-black">-</td>`;
@@ -1707,7 +1718,7 @@
 
         // --- 9. MOBILE WALLPAPER (Resizing to 9:16 before saving) ---
         function handleBgUpload(event) {
-            const cls = document.getElementById('wallpaper-class').value;
+            const teacherId = document.getElementById('wallpaper-teacher').value;
             const file = event.target.files[0];
             
             if(file) {
@@ -1741,7 +1752,7 @@
                         
                         const dateStr = new Date().toLocaleString('th-TH');
                         if(!appData.wallpapers) appData.wallpapers = {};
-                        appData.wallpapers[cls] = { url: resizedBase64, date: dateStr };
+                        appData.wallpapers[teacherId] = { url: resizedBase64, date: dateStr };
                         
                         saveDataAPI(); 
                         
@@ -1758,14 +1769,15 @@
         }
 
         function deleteWallpaper() {
-            const cls = document.getElementById('wallpaper-class').value;
-            if (!appData.wallpapers || !appData.wallpapers[cls]) {
-                showToast("ไม่มีภาพให้ลบสำหรับห้องนี้", "error");
+            const teacherId = document.getElementById('wallpaper-teacher').value;
+            if (!appData.wallpapers || !appData.wallpapers[teacherId]) {
+                showToast("ไม่มีภาพให้ลบสำหรับครูท่านนี้", "error");
                 return;
             }
             
-            customConfirm(`ต้องการลบภาพตารางสอนของ ${cls} ใช่หรือไม่?`, () => {
-                delete appData.wallpapers[cls];
+            const tObj = getTeacher(teacherId);
+            customConfirm(`ต้องการลบภาพตารางสอนของ ${tObj ? tObj.name : ''} ใช่หรือไม่?`, () => {
+                delete appData.wallpapers[teacherId];
                 saveDataAPI();
                 renderMobileWallpaper();
                 showToast("ลบภาพสำเร็จ", "success");
@@ -1773,9 +1785,11 @@
         }
 
         function renderMobileWallpaper() {
-            const cls = document.getElementById('wallpaper-class').value;
-            const wpData = (appData.wallpapers && appData.wallpapers[cls]) ? appData.wallpapers[cls] : null;
+            const teacherId = document.getElementById('wallpaper-teacher').value;
+            const teacherObj = getTeacher(teacherId);
             const exportArea = document.getElementById('wallpaper-export-area');
+            
+            const wpData = (appData.wallpapers && appData.wallpapers[teacherId]) ? appData.wallpapers[teacherId] : null;
             
             if(wpData && wpData.url) {
                 exportArea.style.backgroundImage = `url('${wpData.url}')`;
@@ -1783,7 +1797,7 @@
                 document.getElementById('bg-upload-status').innerText = `อัพโหลดล่าสุด: ${wpData.date}`;
             } else {
                 exportArea.style.backgroundImage = `none`;
-                exportArea.innerHTML = `<span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางสอน</span>`;
+                exportArea.innerHTML = `<span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางสอน<br><span class="text-xl mt-2 block">${teacherObj ? teacherObj.name : ''}</span></span>`;
                 document.getElementById('bg-upload-status').innerText = `ยังไม่มีภาพตารางสอน (อัพโหลดล่าสุด: -)`;
             }
         }
@@ -1814,8 +1828,9 @@
 
         function exportImage(wrapperId, type = 'timetable') {
             if(type === 'wallpaper') {
-                const cls = document.getElementById('wallpaper-class').value;
-                const wpData = (appData.wallpapers && appData.wallpapers[cls]) ? appData.wallpapers[cls] : null;
+                const teacherId = document.getElementById('wallpaper-teacher').value;
+                const teacherObj = getTeacher(teacherId);
+                const wpData = (appData.wallpapers && appData.wallpapers[teacherId]) ? appData.wallpapers[teacherId] : null;
                 
                 if (!wpData || !wpData.url) {
                     showToast("ไม่พบภาพตารางสอน โปรดอัพโหลดภาพก่อนดาวน์โหลด", "error");
@@ -1823,7 +1838,7 @@
                 }
 
                 const link = document.createElement('a');
-                link.download = `ตารางสอน_${cls}_${new Date().getTime()}.jpg`;
+                link.download = `ตารางสอน_${teacherObj ? teacherObj.short : 'mobile'}_${new Date().getTime()}.jpg`;
                 link.href = wpData.url;
                 link.click();
                 

@@ -31,9 +31,10 @@
             overflow: hidden;
         }
         
-        .table-bold { border-collapse: collapse; width: 100%; color: black; }
-        .table-bold th, .table-bold td { border: 2px solid black !important; padding: 4px; text-align: center; }
-        .table-bold th { background-color: #e5e7eb; font-weight: bold; }
+        /* Clean Table Layout */
+        .table-bold { border-collapse: collapse; width: 100%; height: 100%; color: black; table-layout: fixed; }
+        .table-bold th, .table-bold td { border: 1px solid #000 !important; padding: 2px; text-align: center; overflow: hidden; }
+        .table-bold th { background-color: #f3f4f6; font-weight: bold; }
         
         /* Mobile Wallpaper Strict 9:16 Setup */
         .wallpaper-wrapper {
@@ -212,19 +213,22 @@
                 </div>
 
                 <div class="overflow-x-auto bg-gray-200 p-8 flex justify-center">
+                    <!-- พื้นที่จัดวางแบบบังคับขนาด A4 -->
                     <div id="printable-area" class="a4-landscape">
-                        <div>
-                            <div class="text-center mb-4">
+                        <div class="flex-1 flex flex-col h-full">
+                            <div class="text-center mb-4 flex-shrink-0">
                                 <h2 class="text-2xl font-bold" id="print-title">ตารางเรียน</h2>
                                 <h3 class="text-lg" id="print-subtitle">ภาคเรียนที่ - ปีการศึกษา - โรงเรียน -</h3>
                             </div>
                             
-                            <table class="table-bold text-sm w-full" id="timetable-display">
-                                <!-- Injected via JS -->
-                            </table>
+                            <div class="flex-1 min-h-0 w-full pb-2">
+                                <table class="table-bold text-sm w-full h-full" id="timetable-display">
+                                    <!-- Injected via JS -->
+                                </table>
+                            </div>
                         </div>
 
-                        <div class="flex justify-between mt-4 px-12 text-center" id="signatures-area">
+                        <div class="flex justify-between mt-4 px-12 text-center flex-shrink-0" id="signatures-area">
                             <div>
                                 <p>ลงชื่อ..................................................</p>
                                 <p class="mt-2">(<span id="sig-teacher-name">นาย/นาง...</span>)</p>
@@ -297,7 +301,7 @@
                                     <th class="p-2 border text-center">ชม./สัปดาห์</th>
                                     <th class="p-2 border text-center">ชม./ภาค</th>
                                     <th class="p-2 border text-center">ชม./ปี</th>
-                                    <th class="p-2 border">ครูผู้สอนประจำวิชา</th>
+                                    <th class="p-2 border">ครูผู้สอนหลัก</th>
                                     <th class="p-2 border text-center">จัดการ</th>
                                 </tr>
                             </thead>
@@ -517,9 +521,16 @@
                     <label class="block text-sm font-bold mb-1 text-blue-600">ชม./สัปดาห์ (คำนวณอัตโนมัติ)</label>
                     <input type="number" step="any" id="subj-hrWeek" class="w-full border p-2 rounded bg-gray-50" value="1">
                 </div>
-                <div class="col-span-2">
-                    <label class="block text-sm font-bold mb-1">ครูผู้สอน</label>
+                <div>
+                    <label class="block text-sm font-bold mb-1">ครูผู้สอนหลัก (คนที่ 1)</label>
                     <select id="subj-teacher" class="w-full border p-2 rounded">
+                        <!-- Inject via JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1 text-blue-600">ครูผู้สอนร่วม (คนที่ 2)</label>
+                    <select id="subj-teacher2" class="w-full border p-2 rounded bg-blue-50">
+                        <option value="">-- ไม่มี --</option>
                         <!-- Inject via JS -->
                     </select>
                 </div>
@@ -615,107 +626,107 @@
             ],
             subjects: [
                 // ป.1
-                { id: 's1_1', code: 'ท11101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
-                { id: 's1_2', code: 'ค11101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
-                { id: 's1_3', code: 'ว11101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't1' },
-                { id: 's1_4', code: 'ส11101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_5', code: 'ส11102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_6', code: 'พ11101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_7', code: 'ศ11101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_8', code: 'ง11101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_9', code: 'อ11101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't1' },
-                { id: 's1_10', code: 'อ11201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_11', code: 'ว11102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_12', code: 'ก11901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_13', code: 'ก11902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_14', code: 'ก11903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
-                { id: 's1_15', code: 'ก11904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.1', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't1' },
-                { id: 's1_16', code: 'ก11905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_1', code: 'ท11101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1', teacherId2: '' },
+                { id: 's1_2', code: 'ค11101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1', teacherId2: '' },
+                { id: 's1_3', code: 'ว11101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't1', teacherId2: '' },
+                { id: 's1_4', code: 'ส11101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_5', code: 'ส11102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_6', code: 'พ11101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_7', code: 'ศ11101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_8', code: 'ง11101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_9', code: 'อ11101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't1', teacherId2: '' },
+                { id: 's1_10', code: 'อ11201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_11', code: 'ว11102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_12', code: 'ก11901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_13', code: 'ก11902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_14', code: 'ก11903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
+                { id: 's1_15', code: 'ก11904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.1', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't1', teacherId2: '' },
+                { id: 's1_16', code: 'ก11905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1', teacherId2: '' },
                 // ป.2
-                { id: 's2_1', code: 'ท12101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't2' },
-                { id: 's2_2', code: 'ค12101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't2' },
-                { id: 's2_3', code: 'ว12101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7' },
-                { id: 's2_4', code: 'ส12101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_5', code: 'ส12102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_6', code: 'พ12101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_7', code: 'ศ12101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_8', code: 'ง12101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_9', code: 'อ12101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't2' },
-                { id: 's2_10', code: 'อ12201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_11', code: 'ว12102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
-                { id: 's2_12', code: 'ก12901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_13', code: 'ก12902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_14', code: 'ก12903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
-                { id: 's2_15', code: 'ก12904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.2', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't2' },
-                { id: 's2_16', code: 'ก12905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_1', code: 'ท12101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't2', teacherId2: '' },
+                { id: 's2_2', code: 'ค12101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't2', teacherId2: '' },
+                { id: 's2_3', code: 'ว12101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7', teacherId2: '' },
+                { id: 's2_4', code: 'ส12101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_5', code: 'ส12102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_6', code: 'พ12101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_7', code: 'ศ12101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_8', code: 'ง12101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_9', code: 'อ12101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't2', teacherId2: '' },
+                { id: 's2_10', code: 'อ12201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_11', code: 'ว12102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6', teacherId2: '' },
+                { id: 's2_12', code: 'ก12901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_13', code: 'ก12902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_14', code: 'ก12903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
+                { id: 's2_15', code: 'ก12904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.2', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't2', teacherId2: '' },
+                { id: 's2_16', code: 'ก12905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2', teacherId2: '' },
                 // ป.3
-                { id: 's3_1', code: 'ท13101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't3' },
-                { id: 's3_2', code: 'ค13101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't3' },
-                { id: 's3_3', code: 'ว13101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7' },
-                { id: 's3_4', code: 'ส13101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_5', code: 'ส13102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_6', code: 'พ13101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_7', code: 'ศ13101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_8', code: 'ง13101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_9', code: 'อ13101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't3' },
-                { id: 's3_10', code: 'อ13201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_11', code: 'ว13102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_12', code: 'ก13901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_13', code: 'ก13902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_14', code: 'ก13903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's3_15', code: 'ก13904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.3', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't3' },
-                { id: 's3_16', code: 'ก13905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_1', code: 'ท13101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't3', teacherId2: '' },
+                { id: 's3_2', code: 'ค13101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't3', teacherId2: '' },
+                { id: 's3_3', code: 'ว13101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7', teacherId2: '' },
+                { id: 's3_4', code: 'ส13101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_5', code: 'ส13102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_6', code: 'พ13101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_7', code: 'ศ13101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_8', code: 'ง13101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_9', code: 'อ13101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't3', teacherId2: '' },
+                { id: 's3_10', code: 'อ13201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_11', code: 'ว13102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_12', code: 'ก13901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_13', code: 'ก13902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_14', code: 'ก13903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's3_15', code: 'ก13904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.3', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't3', teacherId2: '' },
+                { id: 's3_16', code: 'ก13905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
                 // ป.4
-                { id: 's4_1', code: 'ท14101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't4' },
-                { id: 's4_2', code: 'ค14101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't4' },
-                { id: 's4_3', code: 'ว14101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7' },
-                { id: 's4_4', code: 'ส14101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
-                { id: 's4_5', code: 'ส14102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's4_6', code: 'พ14101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
-                { id: 's4_7', code: 'ศ14101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
-                { id: 's4_8', code: 'ง14101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
-                { id: 's4_9', code: 'อ14101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
-                { id: 's4_10', code: 'อ14201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's4_11', code: 'ว14102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's4_12', code: 'ก14901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's4_13', code: 'ก14902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's4_14', code: 'ก14903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's4_15', code: 'ก14904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.4', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't4' },
-                { id: 's4_16', code: 'ก14905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's4_1', code: 'ท14101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't4', teacherId2: '' },
+                { id: 's4_2', code: 'ค14101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't4', teacherId2: '' },
+                { id: 's4_3', code: 'ว14101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7', teacherId2: '' },
+                { id: 's4_4', code: 'ส14101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4', teacherId2: '' },
+                { id: 's4_5', code: 'ส14102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's4_6', code: 'พ14101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4', teacherId2: '' },
+                { id: 's4_7', code: 'ศ14101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5', teacherId2: '' },
+                { id: 's4_8', code: 'ง14101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6', teacherId2: '' },
+                { id: 's4_9', code: 'อ14101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4', teacherId2: '' },
+                { id: 's4_10', code: 'อ14201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's4_11', code: 'ว14102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's4_12', code: 'ก14901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's4_13', code: 'ก14902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's4_14', code: 'ก14903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's4_15', code: 'ก14904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.4', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't4', teacherId2: '' },
+                { id: 's4_16', code: 'ก14905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
                 // ป.5
-                { id: 's5_1', code: 'ท15101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't5' },
-                { id: 's5_2', code: 'ค15101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't5' },
-                { id: 's5_3', code: 'ว15101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
-                { id: 's5_4', code: 'ส15101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
-                { id: 's5_5', code: 'ส15102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
-                { id: 's5_6', code: 'พ15101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
-                { id: 's5_7', code: 'ศ15101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
-                { id: 's5_8', code: 'ง15101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
-                { id: 's5_9', code: 'อ15101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
-                { id: 's5_10', code: 'อ15201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's5_11', code: 'ว15102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
-                { id: 's5_12', code: 'ก15901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
-                { id: 's5_13', code: 'ก15902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
-                { id: 's5_14', code: 'ก15903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
-                { id: 's5_15', code: 'ก15904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.5', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't5' },
-                { id: 's5_16', code: 'ก15905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                { id: 's5_1', code: 'ท15101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't5', teacherId2: '' },
+                { id: 's5_2', code: 'ค15101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't5', teacherId2: '' },
+                { id: 's5_3', code: 'ว15101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5', teacherId2: '' },
+                { id: 's5_4', code: 'ส15101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5', teacherId2: '' },
+                { id: 's5_5', code: 'ส15102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5', teacherId2: '' },
+                { id: 's5_6', code: 'พ15101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5', teacherId2: '' },
+                { id: 's5_7', code: 'ศ15101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5', teacherId2: '' },
+                { id: 's5_8', code: 'ง15101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6', teacherId2: '' },
+                { id: 's5_9', code: 'อ15101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4', teacherId2: '' },
+                { id: 's5_10', code: 'อ15201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's5_11', code: 'ว15102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3', teacherId2: '' },
+                { id: 's5_12', code: 'ก15901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5', teacherId2: '' },
+                { id: 's5_13', code: 'ก15902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5', teacherId2: '' },
+                { id: 's5_14', code: 'ก15903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5', teacherId2: '' },
+                { id: 's5_15', code: 'ก15904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.5', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't5', teacherId2: '' },
+                { id: 's5_16', code: 'ก15905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5', teacherId2: '' },
                 // ป.6
-                { id: 's6_1', code: 'ท16101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't6' },
-                { id: 's6_2', code: 'ค16101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't6' },
-                { id: 's6_3', code: 'ว16101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
-                { id: 's6_4', code: 'ส16101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
-                { id: 's6_5', code: 'ส16102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
-                { id: 's6_6', code: 'พ16101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
-                { id: 's6_7', code: 'ศ16101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't2' },
-                { id: 's6_8', code: 'ง16101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
-                { id: 's6_9', code: 'อ16101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
-                { id: 's6_10', code: 'อ16201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's6_11', code: 'ว16102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
-                { id: 's6_12', code: 'ก16901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
-                { id: 's6_13', code: 'ก16902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
-                { id: 's6_14', code: 'ก16903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
-                { id: 's6_15', code: 'ก16904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.6', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't6' },
-                { id: 's6_16', code: 'ก16905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' }
+                { id: 's6_1', code: 'ท16101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't6', teacherId2: '' },
+                { id: 's6_2', code: 'ค16101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't6', teacherId2: '' },
+                { id: 's6_3', code: 'ว16101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5', teacherId2: '' },
+                { id: 's6_4', code: 'ส16101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6', teacherId2: '' },
+                { id: 's6_5', code: 'ส16102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6', teacherId2: '' },
+                { id: 's6_6', code: 'พ16101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6', teacherId2: '' },
+                { id: 's6_7', code: 'ศ16101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't2', teacherId2: '' },
+                { id: 's6_8', code: 'ง16101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6', teacherId2: '' },
+                { id: 's6_9', code: 'อ16101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4', teacherId2: '' },
+                { id: 's6_10', code: 'อ16201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's6_11', code: 'ว16102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4', teacherId2: '' },
+                { id: 's6_12', code: 'ก16901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6', teacherId2: '' },
+                { id: 's6_13', code: 'ก16902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6', teacherId2: '' },
+                { id: 's6_14', code: 'ก16903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6', teacherId2: '' },
+                { id: 's6_15', code: 'ก16904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.6', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't6', teacherId2: '' },
+                { id: 's6_16', code: 'ก16905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6', teacherId2: '' }
             ],
             rooms: [
                 { id: 'r1', name: 'ห้อง ป.1', allowShare: false },
@@ -728,7 +739,9 @@
                 { id: 'r_field', name: 'สนาม', allowShare: true }
             ],
             schedule: {}, 
-            slotTeacher: {}, // เก็บข้อมูลครูเฉพาะคาบ (override จากวิชา)
+            slotTeacher: {}, // เก็บข้อมูลครูเฉพาะคาบคนที่ 1
+            slotTeacher2: {}, // เก็บข้อมูลครูเฉพาะคาบคนที่ 2
+            roomSchedule: {},
             wallpapers: {} 
         };
 
@@ -859,6 +872,7 @@
                     if(!appData.rooms) appData.rooms = defaultData.rooms;
                     if(!appData.roomSchedule) appData.roomSchedule = {};
                     if(!appData.wallpapers) appData.wallpapers = {};
+                    if(!appData.slotTeacher2) appData.slotTeacher2 = {};
                     
                     // Period Upgrade check
                     if(appData.periods && appData.periods.length > 0 && !appData.periods[0].hasOwnProperty('isBreak')) {
@@ -872,17 +886,7 @@
                             for(let k in appData.schedule) {
                                 let s = getSubject(appData.schedule[k]);
                                 if(s && s.teacherId) appData.slotTeacher[k] = s.teacherId;
-                            }
-                        }
-                    }
-
-                    // Migration for empty roomSchedule - Auto assign rooms if not set
-                    if (Object.keys(appData.roomSchedule).length === 0 && Object.keys(appData.schedule).length > 0) {
-                        for (let k in appData.schedule) {
-                            const cls = k.split('_')[0];
-                            const defaultRoom = appData.rooms.find(r => r.name.includes(cls));
-                            if (defaultRoom) {
-                                appData.roomSchedule[k] = defaultRoom.id;
+                                if(s && s.teacherId2) appData.slotTeacher2[k] = s.teacherId2;
                             }
                         }
                     }
@@ -891,6 +895,34 @@
                     if(!appData.subjects || appData.subjects.length < 50) {
                         appData.subjects = defaultData.subjects;
                         appData.teachers = defaultData.teachers;
+                    }
+
+                    // Auto assign rooms for subjects containing certain keywords if not already assigned
+                    for (let key in appData.schedule) {
+                        if (!appData.roomSchedule[key]) {
+                            const cls = key.split('_')[0];
+                            const subject = getSubject(appData.schedule[key]);
+                            if (subject) {
+                                let targetRoomId = null;
+                                const subjName = subject.name || "";
+                                if (subjName.includes("คอม") || subjName.includes("เทคโนโลยี") || subjName.includes("วิทยาศาสตร์")) {
+                                    let r = appData.rooms.find(rm => rm.name.includes("คอม"));
+                                    if (r) targetRoomId = r.id;
+                                } else if (subjName.includes("พลศึกษา") || subjName.includes("ลูกเสือ") || subjName.includes("ชุมนุม")) {
+                                    let r = appData.rooms.find(rm => rm.name.includes("สนาม"));
+                                    if (r) targetRoomId = r.id;
+                                }
+                                
+                                if (!targetRoomId) {
+                                    let defaultRoom = appData.rooms.find(r => r.name.includes(cls));
+                                    if (defaultRoom) targetRoomId = defaultRoom.id;
+                                }
+
+                                if (targetRoomId) {
+                                    appData.roomSchedule[key] = targetRoomId;
+                                }
+                            }
+                        }
                     }
 
                     finalizeInit();
@@ -988,6 +1020,7 @@
             let subjTeacherHtml = '';
             appData.teachers.forEach(t => subjTeacherHtml += `<option value="${t.id}">${t.short} (${t.name})</option>`);
             document.getElementById('subj-teacher').innerHTML = subjTeacherHtml;
+            document.getElementById('subj-teacher2').innerHTML = `<option value="">-- ไม่มี --</option>` + subjTeacherHtml;
         }
 
         function switchTab(tabId) {
@@ -1054,25 +1087,31 @@
             document.getElementById('sig-director-name').innerText = appData.settings.director;
 
             // Header Row 1 (ชื่อคาบ)
-            let html = `<thead><tr><th rowspan="2" class="w-[8%] border-2 border-black p-1">วัน</th><th rowspan="2" class="w-[8%] border-2 border-black p-1 leading-tight">โฮมรูม<br><span class="text-[10px] font-normal">08.00-08.30</span></th>`;
+            let html = `<thead><tr><th rowspan="2" class="w-[6%] border border-black p-1 text-[13px]">วัน</th><th rowspan="2" class="w-[6%] border border-black p-1 text-[11px] leading-tight">โฮมรูม<br><span class="font-normal">08.00-08.30</span></th>`;
             appData.periods.forEach(p => {
-                html += `<th class="border-2 border-black p-1">${p.name}</th>`;
+                if (p.isBreak) {
+                    html += `<th rowspan="2" class="w-[6%] border border-black p-1 text-[11px] leading-tight">${p.name}<br><span class="font-normal">${p.start}-${p.end}</span></th>`;
+                } else {
+                    html += `<th class="border border-black p-1 text-[13px]">${p.name}</th>`;
+                }
             });
             html += `</tr><tr>`;
             
             // Header Row 2 (เวลา)
             appData.periods.forEach(p => {
-                html += `<th class="text-[10px] font-normal border-2 border-black p-1 whitespace-nowrap">${p.start} - ${p.end} น.</th>`;
+                if (!p.isBreak) {
+                    html += `<th class="text-[11px] font-normal border border-black p-1 whitespace-nowrap">${p.start} - ${p.end} น.</th>`;
+                }
             });
             html += `</tr></thead><tbody>`;
 
             appData.days.forEach((day, dayIndex) => {
-                html += `<tr><td class="font-bold border-2 border-black p-1 bg-white text-center">${day}</td>`;
+                html += `<tr><td class="font-bold border border-black p-1 bg-white text-center text-[13px]">${day}</td>`;
                 
                 // โฮมรูม (ผสานเซลล์แนวตั้งในวันแรก)
                 if (dayIndex === 0) {
-                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 border-2 border-black text-center p-0 align-middle">
-                                <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; padding: 10px 0;" class="font-bold text-blue-900 text-sm inline-block">กิจกรรมหน้าเสาธงและโฮมรูม</div>
+                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 border border-black text-center p-0 align-middle">
+                                <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; padding: 10px 0;" class="font-bold text-blue-900 text-[13px] inline-block">กิจกรรมหน้าเสาธงและโฮมรูม</div>
                              </td>`;
                 }
                 
@@ -1084,8 +1123,8 @@
                     // ถ้าเป็นเวลาพัก
                     if (p.isBreak) { 
                         if (dayIndex === 0) {
-                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 border-2 border-black text-center p-0 align-middle w-[6%]">
-                                        <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; padding: 10px 0;" class="font-bold text-gray-700 text-sm inline-block">${p.breakName || 'พัก'}</div>
+                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 border border-black text-center p-0 align-middle">
+                                        <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; padding: 10px 0;" class="font-bold text-gray-700 text-[13px] inline-block">${p.breakName || 'พัก'}</div>
                                      </td>`;
                         }
                         continue; 
@@ -1095,6 +1134,7 @@
 
                     let subjectObj = null;
                     let actualTeacherId = null;
+                    let actualTeacherId2 = null;
                     let displayClass = null;
                     let displayRoom = null;
 
@@ -1103,7 +1143,8 @@
                         const subjId = appData.schedule[cellKey];
                         if(subjId) {
                             subjectObj = { ...getSubject(subjId) };
-                            actualTeacherId = (appData.slotTeacher && appData.slotTeacher[cellKey]) || subjectObj.teacherId;
+                            actualTeacherId = (appData.slotTeacher && appData.slotTeacher[cellKey] !== undefined) ? appData.slotTeacher[cellKey] : subjectObj.teacherId;
+                            actualTeacherId2 = (appData.slotTeacher2 && appData.slotTeacher2[cellKey] !== undefined) ? appData.slotTeacher2[cellKey] : subjectObj.teacherId2;
                             const roomId = appData.roomSchedule[cellKey];
                             if(roomId) displayRoom = getRoom(roomId);
                         }
@@ -1111,13 +1152,15 @@
                         const cellKey = Object.keys(appData.schedule).find(k => {
                             if (!k.endsWith(`_${day}_${p.id}`)) return false;
                             let subj = getSubject(appData.schedule[k]);
-                            let tId = (appData.slotTeacher && appData.slotTeacher[k]) ? appData.slotTeacher[k] : (subj ? subj.teacherId : null);
-                            return tId === target;
+                            let tId = (appData.slotTeacher && appData.slotTeacher[k] !== undefined) ? appData.slotTeacher[k] : (subj ? subj.teacherId : null);
+                            let tId2 = (appData.slotTeacher2 && appData.slotTeacher2[k] !== undefined) ? appData.slotTeacher2[k] : (subj ? subj.teacherId2 : null);
+                            return tId === target || tId2 === target;
                         });
                         if(cellKey) {
                             subjectObj = { ...getSubject(appData.schedule[cellKey]) };
                             displayClass = cellKey.split('_')[0]; 
-                            actualTeacherId = target;
+                            actualTeacherId = (appData.slotTeacher && appData.slotTeacher[cellKey] !== undefined) ? appData.slotTeacher[cellKey] : subjectObj.teacherId;
+                            actualTeacherId2 = (appData.slotTeacher2 && appData.slotTeacher2[cellKey] !== undefined) ? appData.slotTeacher2[cellKey] : subjectObj.teacherId2;
                             const roomId = appData.roomSchedule[cellKey];
                             if(roomId) displayRoom = getRoom(roomId);
                         }
@@ -1134,7 +1177,7 @@
                         }
                     }
 
-                    // Colspan Logic (ตรวจสอบว่าวิชาเดิมและครูคนเดิมหรือไม่)
+                    // Colspan Logic 
                     let colspan = 1;
                     if (subjectObj) {
                         for (let next = i + 1; next < appData.periods.length; next++) {
@@ -1143,6 +1186,7 @@
 
                             let nextSubjObj = null;
                             let nextActualTeacherId = null;
+                            let nextActualTeacherId2 = null;
                             let nextRoomId = null;
 
                             if (type === 'class') {
@@ -1150,19 +1194,22 @@
                                 const nextId = appData.schedule[nextKey];
                                 if(nextId) {
                                     nextSubjObj = getSubject(nextId);
-                                    nextActualTeacherId = (appData.slotTeacher && appData.slotTeacher[nextKey]) || nextSubjObj.teacherId;
+                                    nextActualTeacherId = (appData.slotTeacher && appData.slotTeacher[nextKey] !== undefined) ? appData.slotTeacher[nextKey] : nextSubjObj.teacherId;
+                                    nextActualTeacherId2 = (appData.slotTeacher2 && appData.slotTeacher2[nextKey] !== undefined) ? appData.slotTeacher2[nextKey] : nextSubjObj.teacherId2;
                                 }
                                 nextRoomId = appData.roomSchedule[nextKey];
                             } else if (type === 'teacher') {
                                 const nextKey = Object.keys(appData.schedule).find(k => {
                                     if (!k.endsWith(`_${day}_${nextP.id}`)) return false;
                                     let subj = getSubject(appData.schedule[k]);
-                                    let tId = (appData.slotTeacher && appData.slotTeacher[k]) ? appData.slotTeacher[k] : (subj ? subj.teacherId : null);
-                                    return tId === target;
+                                    let tId = (appData.slotTeacher && appData.slotTeacher[k] !== undefined) ? appData.slotTeacher[k] : (subj ? subj.teacherId : null);
+                                    let tId2 = (appData.slotTeacher2 && appData.slotTeacher2[k] !== undefined) ? appData.slotTeacher2[k] : (subj ? subj.teacherId2 : null);
+                                    return tId === target || tId2 === target;
                                 });
                                 if(nextKey) {
                                     nextSubjObj = getSubject(appData.schedule[nextKey]);
-                                    nextActualTeacherId = target;
+                                    nextActualTeacherId = (appData.slotTeacher && appData.slotTeacher[nextKey] !== undefined) ? appData.slotTeacher[nextKey] : nextSubjObj.teacherId;
+                                    nextActualTeacherId2 = (appData.slotTeacher2 && appData.slotTeacher2[nextKey] !== undefined) ? appData.slotTeacher2[nextKey] : nextSubjObj.teacherId2;
                                     nextRoomId = appData.roomSchedule[nextKey];
                                 }
                             } else if (type === 'room') {
@@ -1175,7 +1222,7 @@
                             // ในหน้าตารางห้อง จะผสานต่อเมื่อเป็นวิชาเดียวกัน (เพื่อความเรียบง่าย)
                             if (type === 'room' && nextSubjObj && nextSubjObj.id === subjectObj.id) {
                                 colspan++;
-                            } else if (type !== 'room' && nextSubjObj && nextSubjObj.id === subjectObj.id && nextActualTeacherId === actualTeacherId && nextRoomId === currentRoomId) {
+                            } else if (type !== 'room' && nextSubjObj && nextSubjObj.id === subjectObj.id && nextActualTeacherId === actualTeacherId && nextActualTeacherId2 === actualTeacherId2 && nextRoomId === currentRoomId) {
                                 colspan++;
                             } else {
                                 break;
@@ -1186,17 +1233,27 @@
                     skipPeriods = colspan - 1;
 
                     if (subjectObj) {
-                        let teacher = actualTeacherId ? getTeacher(actualTeacherId) : null;
-                        let subText = type === 'class' ? (teacher ? teacher.short : '') : subjectObj.showClass;
-                        let roomText = (type !== 'room' && displayRoom) ? `<div style="font-size: 10px; color: #dc2626; font-weight: bold; margin-top: 1px;">(${displayRoom.name})</div>` : '';
+                        let t1 = actualTeacherId ? getTeacher(actualTeacherId) : null;
+                        let t2 = actualTeacherId2 ? getTeacher(actualTeacherId2) : null;
+                        let tNames = [];
+                        if(t1) tNames.push(t1.short);
+                        if(t2) tNames.push(t2.short);
+                        
+                        let subText = type === 'class' ? tNames.join('/') : subjectObj.showClass;
+                        let roomText = (type !== 'room' && displayRoom) ? `<span class="text-[10px] text-gray-600 whitespace-nowrap mt-[1px]">(${displayRoom.name})</span>` : '';
 
-                        html += `<td colspan="${colspan}" class="bg-white border-2 border-black align-middle text-center" style="height: 75px; padding: 4px; overflow: hidden; word-break: break-word;">
-                                    <div style="font-size: 12px; font-weight: bold; color: #1e3a8a; line-height: 1.25;">${subjectObj.shortName || subjectObj.name}</div>
-                                    <div style="font-size: 11px; color: #4b5563; margin-top: 3px; line-height: 1;">${subText}</div>
-                                    ${roomText}
+                        let subjName = subjectObj.shortName || subjectObj.name;
+                        let titleSize = subjName.length > 15 ? 'text-[11px]' : 'text-[13px]';
+
+                        html += `<td colspan="${colspan}" class="bg-white border border-black align-middle text-center p-1">
+                                    <div class="flex flex-col justify-center items-center w-full h-full overflow-hidden">
+                                        <span class="${titleSize} font-bold text-black leading-tight line-clamp-2 break-words w-full px-1">${subjName}</span>
+                                        <span class="text-[11px] text-gray-800 leading-tight mt-[2px] truncate w-full">${subText}</span>
+                                        ${roomText}
+                                    </div>
                                  </td>`;
                     } else {
-                        html += `<td class="text-gray-300 bg-white border-2 border-black">-</td>`;
+                        html += `<td class="text-gray-300 bg-white border border-black">-</td>`;
                     }
                 }
                 html += `</tr>`;
@@ -1231,9 +1288,15 @@
                 let current = scheduledCount[s.id];
                 let max = s.hrWeek;
                 if (current < max) {
-                    let t = getTeacher(s.teacherId);
+                    let t1 = getTeacher(s.teacherId);
+                    let t2 = getTeacher(s.teacherId2);
+                    let tNames = [];
+                    if(t1) tNames.push(t1.short);
+                    if(t2) tNames.push(t2.short);
+                    let tDisplay = tNames.length > 0 ? tNames.join('/') : 'ไม่มีครู';
+
                     listHtml += `<div class="flex justify-between border-b border-gray-200 pb-1">
-                                    <span>${s.name} (${t ? t.short : 'ไม่มีครู'})</span>
+                                    <span>${s.name} <span class="text-xs text-gray-500">(${tDisplay})</span></span>
                                     <span class="text-red-500 font-bold">${current}/${max}</span>
                                  </div>`;
                 }
@@ -1262,12 +1325,20 @@
                         }
                     });
 
-                    // สร้าง Dropdown ครูแทนห้อง (หรือให้มีทั้งคู่)
-                    const currentTeacherVal = appData.slotTeacher && appData.slotTeacher[cellKey] ? appData.slotTeacher[cellKey] : "";
-                    let teacherOptionsHtml = `<option value="">-- ไม่ระบุครู --</option>`;
+                    // สร้าง Dropdown ครูคนที่ 1 และคนที่ 2
+                    const currentTeacherVal = (appData.slotTeacher && appData.slotTeacher[cellKey] !== undefined) ? appData.slotTeacher[cellKey] : "";
+                    const currentTeacherVal2 = (appData.slotTeacher2 && appData.slotTeacher2[cellKey] !== undefined) ? appData.slotTeacher2[cellKey] : "";
+                    
+                    let teacherOptionsHtml = `<option value="">-- ไม่มีครู --</option>`;
                     appData.teachers.forEach(t => {
                         let selectedStr = (currentTeacherVal === t.id) ? 'selected' : '';
                         teacherOptionsHtml += `<option value="${t.id}" ${selectedStr}>${t.short}</option>`;
+                    });
+
+                    let teacherOptionsHtml2 = `<option value="">-- ไม่มีครู --</option>`;
+                    appData.teachers.forEach(t => {
+                        let selectedStr = (currentTeacherVal2 === t.id) ? 'selected' : '';
+                        teacherOptionsHtml2 += `<option value="${t.id}" ${selectedStr}>${t.short}</option>`;
                     });
 
                     // Dropdown ห้องเรียน
@@ -1282,9 +1353,14 @@
                                     <select class="w-full border p-1 text-xs rounded bg-white font-bold text-blue-800" onchange="updateSchedule('${cellKey}', this, this.value, '${currentSubjVal}')">
                                         ${subjOptionsHtml}
                                     </select>
-                                    <select class="w-full border p-0.5 text-[10px] rounded bg-blue-50 text-blue-800" onchange="updateSlotTeacher('${cellKey}', this, this.value, '${currentTeacherVal}')">
-                                        ${teacherOptionsHtml}
-                                    </select>
+                                    <div class="flex space-x-0.5">
+                                        <select class="w-1/2 border p-0.5 text-[10px] rounded bg-blue-50 text-blue-800" onchange="updateSlotTeacher('${cellKey}', this, this.value, '${currentTeacherVal}')">
+                                            ${teacherOptionsHtml}
+                                        </select>
+                                        <select class="w-1/2 border p-0.5 text-[10px] rounded bg-blue-50 text-blue-800" onchange="updateSlotTeacher2('${cellKey}', this, this.value, '${currentTeacherVal2}')">
+                                            ${teacherOptionsHtml2}
+                                        </select>
+                                    </div>
                                     <select class="w-full border p-0.5 text-[10px] rounded bg-gray-50 text-gray-600" onchange="updateRoom('${cellKey}', this, this.value, '${currentRoomVal}')">
                                         ${roomOptionsHtml}
                                     </select>
@@ -1297,49 +1373,95 @@
             table.innerHTML = html;
         }
 
+        // ฟังก์ชันช่วยเช็คการชนกันของครู
+        function checkTeacherConflict(tId, currentKey, day, pId) {
+            if (!tId) return false;
+            for (let sKey in appData.schedule) {
+                if (sKey !== currentKey && sKey.endsWith(`_${day}_${pId}`)) {
+                    let ot1 = (appData.slotTeacher && appData.slotTeacher[sKey] !== undefined) ? appData.slotTeacher[sKey] : null;
+                    let ot2 = (appData.slotTeacher2 && appData.slotTeacher2[sKey] !== undefined) ? appData.slotTeacher2[sKey] : null;
+                    
+                    // Fallback to default subject teacher if slot override not set
+                    if (ot1 === null || ot2 === null) {
+                        let subj = getSubject(appData.schedule[sKey]);
+                        if(subj) {
+                            if(ot1 === null) ot1 = subj.teacherId;
+                            if(ot2 === null) ot2 = subj.teacherId2;
+                        }
+                    }
+
+                    if (ot1 === tId || ot2 === tId) {
+                        return sKey.split('_')[0]; // Return the class name that causes conflict
+                    }
+                }
+            }
+            return false;
+        }
+
         // ระบบเช็คครูชนกันเมื่อเลือกวิชาใหม่
         function updateSchedule(key, selectElement, subjectId, previousValue) {
             if (!appData.slotTeacher) appData.slotTeacher = {};
+            if (!appData.slotTeacher2) appData.slotTeacher2 = {};
+            
             if (subjectId === "") {
                 delete appData.schedule[key];
                 delete appData.slotTeacher[key]; 
-                delete appData.roomSchedule[key];
+                delete appData.slotTeacher2[key];
+                delete appData.roomSchedule[key]; 
             } else {
                 const subject = getSubject(subjectId);
                 const teacherId = subject ? subject.teacherId : null;
+                const teacherId2 = subject ? subject.teacherId2 : null;
                 const [cls, day, pId] = key.split('_');
 
-                // เช็คครูชนกัน (Teacher Conflict Detection)
-                if (teacherId) {
-                    for (let sKey in appData.slotTeacher) {
-                        if (sKey !== key && sKey.endsWith(`_${day}_${pId}`) && appData.slotTeacher[sKey] === teacherId) {
-                            const otherCls = sKey.split('_')[0];
-                            const teacher = getTeacher(teacherId);
-                            showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${otherCls} ในคาบนี้แล้ว`, 'error');
-                            if (selectElement) selectElement.value = previousValue; 
-                            return;
-                        }
-                    }
+                // เช็คครูชนกัน ทั้งครูคนที่ 1 และ 2
+                let conflictCls1 = checkTeacherConflict(teacherId, key, day, pId);
+                if (conflictCls1) {
+                    const teacher = getTeacher(teacherId);
+                    showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${conflictCls1} ในคาบนี้แล้ว`, 'error');
+                    if (selectElement) selectElement.value = previousValue; 
+                    return;
+                }
+
+                let conflictCls2 = checkTeacherConflict(teacherId2, key, day, pId);
+                if (conflictCls2) {
+                    const teacher2 = getTeacher(teacherId2);
+                    showToast(`จัดไม่ได้! ${teacher2 ? teacher2.short : 'ครู'} มีสอนชั้น ${conflictCls2} ในคาบนี้แล้ว`, 'error');
+                    if (selectElement) selectElement.value = previousValue; 
+                    return;
                 }
 
                 // ถ้าไม่ชนกัน ให้บันทึกวิชาและครูค่าเริ่มต้นลงไป
                 appData.schedule[key] = subjectId;
-                if(teacherId) {
-                    appData.slotTeacher[key] = teacherId;
-                } else {
-                    delete appData.slotTeacher[key];
-                }
+                if(teacherId) appData.slotTeacher[key] = teacherId; else delete appData.slotTeacher[key];
+                if(teacherId2) appData.slotTeacher2[key] = teacherId2; else delete appData.slotTeacher2[key];
                 
-                // จัดห้องอัตโนมัติถ้ายังไม่ได้เลือก
+                // จัดห้องอัตโนมัติแบบฉลาด
                 if (!appData.roomSchedule[key]) {
-                    const defaultRoom = appData.rooms.find(r => r.name.includes(cls));
-                    if (defaultRoom) updateRoom(key, null, defaultRoom.id, "");
+                    let targetRoomId = null;
+                    const subjName = subject.name || "";
+                    if (subjName.includes("คอม") || subjName.includes("เทคโนโลยี") || subjName.includes("วิทยาศาสตร์")) {
+                        let r = appData.rooms.find(rm => rm.name.includes("คอม"));
+                        if (r) targetRoomId = r.id;
+                    } else if (subjName.includes("พลศึกษา") || subjName.includes("ลูกเสือ") || subjName.includes("ชุมนุม")) {
+                        let r = appData.rooms.find(rm => rm.name.includes("สนาม"));
+                        if (r) targetRoomId = r.id;
+                    }
+                    
+                    if (!targetRoomId) {
+                        let defaultRoom = appData.rooms.find(r => r.name.includes(cls));
+                        if (defaultRoom) targetRoomId = defaultRoom.id;
+                    }
+
+                    if (targetRoomId) {
+                        appData.roomSchedule[key] = targetRoomId;
+                    }
                 }
             }
             renderBuilder(); 
         }
 
-        // ระบบเช็คครูชนกันเมื่อสลับครูจากตัวเลือก
+        // ระบบเช็คครูชนกันเมื่อสลับครูคนที่ 1
         function updateSlotTeacher(key, selectElement, teacherId, previousValue) {
             if (!appData.slotTeacher) appData.slotTeacher = {};
             if (!teacherId) {
@@ -1349,19 +1471,39 @@
             }
 
             const [cls, day, pId] = key.split('_');
-
-            // ตรวจสอบว่าครูคนนี้สอนห้องอื่นในคาบนี้อยู่หรือเปล่า
-            for (let sKey in appData.slotTeacher) {
-                if (sKey !== key && sKey.endsWith(`_${day}_${pId}`) && appData.slotTeacher[sKey] === teacherId) {
-                    const otherCls = sKey.split('_')[0];
-                    const teacher = getTeacher(teacherId);
-                    showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${otherCls} ในคาบนี้แล้ว`, 'error');
-                    if(selectElement) selectElement.value = previousValue; 
-                    return;
-                }
+            let conflictCls = checkTeacherConflict(teacherId, key, day, pId);
+            
+            if (conflictCls) {
+                const teacher = getTeacher(teacherId);
+                showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${conflictCls} ในคาบนี้แล้ว`, 'error');
+                if(selectElement) selectElement.value = previousValue; 
+                return;
             }
 
             appData.slotTeacher[key] = teacherId;
+            if(!selectElement) renderBuilder(); 
+        }
+
+        // ระบบเช็คครูชนกันเมื่อสลับครูคนที่ 2
+        function updateSlotTeacher2(key, selectElement, teacherId, previousValue) {
+            if (!appData.slotTeacher2) appData.slotTeacher2 = {};
+            if (!teacherId) {
+                delete appData.slotTeacher2[key];
+                renderBuilder();
+                return;
+            }
+
+            const [cls, day, pId] = key.split('_');
+            let conflictCls = checkTeacherConflict(teacherId, key, day, pId);
+            
+            if (conflictCls) {
+                const teacher = getTeacher(teacherId);
+                showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${conflictCls} ในคาบนี้แล้ว`, 'error');
+                if(selectElement) selectElement.value = previousValue; 
+                return;
+            }
+
+            appData.slotTeacher2[key] = teacherId;
             if(!selectElement) renderBuilder(); 
         }
 
@@ -1416,6 +1558,10 @@
             let html = '';
             sortedSubjects.forEach(s => {
                 let t = getTeacher(s.teacherId);
+                let t2 = getTeacher(s.teacherId2);
+                let tNames = [];
+                if(t) tNames.push(t.short);
+                if(t2) tNames.push(t2.short);
                 let shortText = s.shortName ? `(${s.shortName})` : '';
                 
                 html += `<tr class="border-b hover:bg-gray-50 bg-white">
@@ -1426,7 +1572,7 @@
                             <td class="p-2 border text-center">${s.hrWeek}</td>
                             <td class="p-2 border text-center">${s.hrSem}</td>
                             <td class="p-2 border text-center">${s.hrYear}</td>
-                            <td class="p-2 border">${t ? t.short : '-'}</td>
+                            <td class="p-2 border">${tNames.join(' / ') || '-'}</td>
                             <td class="p-2 border text-center space-x-2">
                                 <button onclick="openSubjectModal('${s.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-edit"></i></button>
                                 <button onclick="deleteSubject('${s.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
@@ -1450,13 +1596,15 @@
                 document.getElementById('subj-hrWeek').value = s.hrWeek;
                 document.getElementById('subj-hrSem').value = s.hrSem;
                 document.getElementById('subj-hrYear').value = s.hrYear;
-                document.getElementById('subj-teacher').value = s.teacherId;
+                document.getElementById('subj-teacher').value = s.teacherId || '';
+                document.getElementById('subj-teacher2').value = s.teacherId2 || '';
             } else {
                 document.getElementById('subject-modal-title').innerText = 'เพิ่มวิชาใหม่';
                 document.getElementById('subj-id').value = '';
                 document.getElementById('subj-code').value = '';
                 document.getElementById('subj-name').value = '';
                 document.getElementById('subj-short').value = '';
+                document.getElementById('subj-teacher2').value = '';
             }
         }
         function closeSubjectModal() { document.getElementById('subject-modal').classList.add('hidden'); }
@@ -1484,7 +1632,8 @@
                 hrWeek: parseFloat(document.getElementById('subj-hrWeek').value) || 0,
                 hrSem: parseFloat(document.getElementById('subj-hrSem').value) || 0,
                 hrYear: parseFloat(document.getElementById('subj-hrYear').value) || 0,
-                teacherId: document.getElementById('subj-teacher').value
+                teacherId: document.getElementById('subj-teacher').value,
+                teacherId2: document.getElementById('subj-teacher2').value
             };
             if(!data.name) return showToast("กรุณาใส่ชื่อวิชา", "error");
 
@@ -1506,6 +1655,8 @@
                     if(appData.schedule[key] === id) {
                         delete appData.schedule[key];
                         if (appData.slotTeacher) delete appData.slotTeacher[key];
+                        if (appData.slotTeacher2) delete appData.slotTeacher2[key];
+                        if (appData.roomSchedule) delete appData.roomSchedule[key];
                     }
                 }
                 saveDataAPI();
@@ -1698,6 +1849,7 @@
                     if (key.endsWith(`_${deletedPeriodId}`)) {
                         delete appData.schedule[key];
                         if (appData.slotTeacher) delete appData.slotTeacher[key];
+                        if (appData.slotTeacher2) delete appData.slotTeacher2[key];
                     }
                 }
                 renderSettingsPeriods();

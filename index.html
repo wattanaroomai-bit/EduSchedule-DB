@@ -43,6 +43,7 @@
             border-radius: 1rem;
             overflow: hidden;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            background-color: #e5e7eb;
         }
         .wallpaper-container { 
             width: 1080px; 
@@ -124,7 +125,7 @@
                 <li><a href="#" onclick="switchTab('manage-subjects')" id="nav-manage-subjects" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-book w-6"></i> ข้อมูลรายวิชา</a></li>
                 <li><a href="#" onclick="switchTab('manage-teachers')" id="nav-manage-teachers" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-users w-6"></i> ข้อมูลครู/ห้อง</a></li>
                 <li><a href="#" onclick="switchTab('manage-rooms')" id="nav-manage-rooms" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-door-open w-6"></i> ข้อมูลห้องเรียน</a></li>
-                <li><a href="#" onclick="switchTab('mobile-wallpaper')" id="nav-mobile-wallpaper" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-mobile-screen w-6"></i> วอลเปเปอร์มือถือ</a></li>
+                <li><a href="#" onclick="switchTab('mobile-wallpaper')" id="nav-mobile-wallpaper" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-mobile-screen w-6"></i> ภาพตารางเรียนมือถือ</a></li>
                 <li><a href="#" onclick="switchTab('settings')" id="nav-settings" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-cog w-6"></i> ตั้งค่าระบบ</a></li>
             </ul>
         </nav>
@@ -311,7 +312,7 @@
             <section id="mobile-wallpaper" class="tab-content hidden">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-white p-4 rounded shadow">
-                        <h3 class="font-bold text-lg mb-4">สร้างวอลเปเปอร์มือถือ (9:16)</h3>
+                        <h3 class="font-bold text-lg mb-4">จัดการภาพตารางเรียน (มือถือ)</h3>
                         
                         <label class="block mb-2 font-bold">เลือกห้องเรียน:</label>
                         <select id="wallpaper-class" class="w-full border p-2 rounded mb-4" onchange="renderMobileWallpaper()">
@@ -319,29 +320,27 @@
                         </select>
 
                         <div class="mb-4">
-                            <label class="block mb-2 font-bold">อัพโหลดพื้นหลังแนวตั้ง (ระบบจะปรับเป็น 9:16 อัตโนมัติ):</label>
-                            <input type="file" id="bg-upload" accept="image/*" class="w-full border p-2 rounded" onchange="handleBgUpload(event)">
-                            <p class="text-xs text-gray-500 mt-1" id="bg-upload-status">ยังไม่มีภาพพื้นหลัง (อัพโหลดล่าสุด: -)</p>
-                            <p class="text-[11px] text-blue-600 mt-1"><i class="fa-solid fa-info-circle"></i> ข้อมูลจะถูกบีบอัดและบันทึกอัตโนมัติ ทำให้ภาพจะอยู่ถาวรจนกว่าจะเปลี่ยนใหม่</p>
+                            <label class="block mb-2 font-bold">อัพโหลดภาพตารางเรียนของคุณ (ระบบจะปรับ 9:16 อัตโนมัติ):</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="file" id="bg-upload" accept="image/*" class="flex-1 border p-2 rounded" onchange="handleBgUpload(event)">
+                                <button onclick="deleteWallpaper()" class="bg-red-500 text-white px-4 py-2 rounded font-bold hover:bg-red-600 shadow"><i class="fa-solid fa-trash"></i> ลบภาพ</button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1" id="bg-upload-status">ยังไม่มีภาพตารางเรียน (อัพโหลดล่าสุด: -)</p>
+                            <p class="text-[11px] text-blue-600 mt-1"><i class="fa-solid fa-info-circle"></i> ภาพจะถูกบันทึกลงฐานข้อมูลและแสดงผลแบบ 100% (ไม่ลดความสว่างหรือเบลอ)</p>
                         </div>
 
                         <button onclick="exportImage('wp-wrapper', 'wallpaper')" class="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 shadow-lg mt-2">
-                            <i class="fa-solid fa-download"></i> ดาวน์โหลดวอลเปเปอร์
+                            <i class="fa-solid fa-download"></i> ดาวน์โหลดภาพนี้
                         </button>
                     </div>
 
                     <div class="bg-gray-800 p-4 rounded shadow flex justify-center items-center overflow-hidden min-h-[620px]">
                         <!-- Wrapper ensures exact 9:16 aspect ratio in preview visually -->
                         <div class="wallpaper-wrapper" id="wp-wrapper">
-                            <div id="wallpaper-export-area" class="wallpaper-container bg-white" style="background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1080');">
-                                <!-- เปลี่ยนจากการใช้กรอบขาว เป็น Overlay ดำบางๆ ให้อ่านตัวอักษรสีขาวได้ชัด -->
-                                <div class="absolute inset-0 bg-black bg-opacity-40 p-12 flex flex-col items-center justify-center">
-                                    
-                                    <table class="w-full text-center text-3xl border-collapse" id="wp-table">
-                                        <!-- Injected via JS (Clean layout) -->
-                                    </table>
-
-                                </div>
+                            <!-- เราลบ overlay สีดำและข้อมูลตารางออกทั้งหมด ให้เหลือแค่ภาพ Background เพียวๆ -->
+                            <div id="wallpaper-export-area" class="wallpaper-container bg-gray-200 flex items-center justify-center text-center">
+                                <!-- ข้อความนี้จะแสดงเฉพาะตอนยังไม่อัพโหลดรูป -->
+                                <span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางเรียน</span>
                             </div>
                         </div>
                     </div>
@@ -1273,8 +1272,8 @@
                         // วาดภาพลง Canvas
                         ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
                         
-                        // แปลงเป็น Base64 แบบ JPEG พร้อมลดขนาดเพื่อให้เก็บลงฐานข้อมูลได้
-                        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        // ใช้ JPEG แบบคุณภาพสูงสุด (0.95) เพื่อความคมชัด และขนาดที่รับได้สำหรับฐานข้อมูล
+                        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.95);
                         
                         const dateStr = new Date().toLocaleString('th-TH');
                         if(!appData.wallpapers) appData.wallpapers = {};
@@ -1285,7 +1284,10 @@
                         
                         // อัปเดตหน้าจอ
                         document.getElementById('bg-upload-status').innerText = `อัพโหลดล่าสุด: ${dateStr}`;
-                        document.getElementById('wallpaper-export-area').style.backgroundImage = `url('${resizedBase64}')`;
+                        renderMobileWallpaper(); // วาดพรีวิวใหม่
+                        
+                        // ล้างช่อง input เผื่อต้องการอัพโหลดซ้ำไฟล์เดิม
+                        event.target.value = '';
                         
                         hideLoader();
                     };
@@ -1295,107 +1297,72 @@
             }
         }
 
+        function deleteWallpaper() {
+            const cls = document.getElementById('wallpaper-class').value;
+            if (!appData.wallpapers || !appData.wallpapers[cls]) {
+                showToast("ไม่มีภาพให้ลบสำหรับห้องนี้", "error");
+                return;
+            }
+            
+            customConfirm(`ต้องการลบภาพตารางเรียนของ ${cls} ใช่หรือไม่?`, () => {
+                delete appData.wallpapers[cls];
+                saveDataAPI();
+                renderMobileWallpaper();
+                showToast("ลบภาพสำเร็จ", "success");
+            });
+        }
+
         function renderMobileWallpaper() {
             const cls = document.getElementById('wallpaper-class').value;
-            
             const wpData = (appData.wallpapers && appData.wallpapers[cls]) ? appData.wallpapers[cls] : null;
+            const exportArea = document.getElementById('wallpaper-export-area');
+            
             if(wpData && wpData.url) {
-                document.getElementById('wallpaper-export-area').style.backgroundImage = `url('${wpData.url}')`;
+                // ถ้ามีภาพ: โชว์ภาพ 100% ไม่มีข้อความใดๆ ทับทั้งสิ้น (แบบคลีน)
+                exportArea.style.backgroundImage = `url('${wpData.url}')`;
+                exportArea.innerHTML = '';
                 document.getElementById('bg-upload-status').innerText = `อัพโหลดล่าสุด: ${wpData.date}`;
             } else {
-                document.getElementById('wallpaper-export-area').style.backgroundImage = `url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1080')`;
-                document.getElementById('bg-upload-status').innerText = `ยังไม่มีภาพพื้นหลัง (อัพโหลดล่าสุด: -)`;
+                // ถ้าไม่มีภาพ: ให้ขึ้นพื้นหลังสีเทาพร้อมข้อความเตือน
+                exportArea.style.backgroundImage = `none`;
+                exportArea.innerHTML = `<span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางเรียน</span>`;
+                document.getElementById('bg-upload-status').innerText = `ยังไม่มีภาพตารางเรียน (อัพโหลดล่าสุด: -)`;
             }
-
-            const table = document.getElementById('wp-table');
-            
-            // Clean Table Layout (โปร่งใส ไม่มีกรอบขาว ตัวหนังสือสีขาวมีเงา Drop-shadow)
-            let html = `<thead><tr class="text-white border-b-2 border-white/50"><th class="p-4">วัน</th>`;
-            appData.periods.filter(p=>p.id!=='lunch').forEach(p => html += `<th class="p-4">คาบ ${p.id}</th>`);
-            html += `</tr></thead><tbody>`;
-
-            appData.days.forEach(day => {
-                html += `<tr class="border-b border-white/20 last:border-0"><td class="p-4 font-bold text-white drop-shadow-md">${day}</td>`;
-                
-                let skipPeriods = 0;
-                let regularPeriodsCount = appData.periods.filter(p => p.id !== 'lunch').length;
-                let periodIndex = 1;
-
-                appData.periods.forEach(p => {
-                    if(p.id === 'lunch') return;
-                    if(skipPeriods > 0) { skipPeriods--; periodIndex++; return; }
-
-                    const subjId = appData.schedule[`${cls}_${day}_${periodIndex}`];
-                    let subjectObj = subjId ? getSubject(subjId) : null;
-                    let colspan = 1;
-
-                    if (subjectObj) {
-                        for (let next = periodIndex + 1; next <= regularPeriodsCount; next++) {
-                            const nextId = appData.schedule[`${cls}_${day}_${next}`];
-                            if (nextId && getSubject(nextId).id === subjectObj.id) colspan++;
-                            else break;
-                        }
-                    }
-
-                    skipPeriods = colspan - 1;
-
-                    if(subjectObj) {
-                        html += `<td colspan="${colspan}" class="p-4 text-3xl font-bold text-white drop-shadow-lg">${subjectObj.name}</td>`;
-                    } else {
-                        html += `<td class="p-4 text-white/40">-</td>`;
-                    }
-                    periodIndex++;
-                });
-                html += `</tr>`;
-            });
-            html += `</tbody>`;
-            table.innerHTML = html;
         }
 
         // --- 10. EXPORT IMAGE ---
         function exportImage(wrapperId, type = 'timetable') {
-            const wrapper = document.getElementById(wrapperId);
-            let elementToCapture = wrapper;
-            
-            let oldScale = '';
-            
             if(type === 'wallpaper') {
-                // ข้ามการแคปเจอร์ Wrapper เพื่อไปแคปเจอร์ตัวเต็ม 1080x1920 ด้านใน
-                elementToCapture = document.getElementById('wallpaper-export-area');
-                oldScale = elementToCapture.style.transform;
-                // ปลด scale เพื่อให้ html2canvas เจอไซส์ 1080x1920 เต็มๆ
-                elementToCapture.style.transform = 'scale(1)'; 
-            }
-
-            // ถ้าเป็นตารางเรียนปกติ เร่งความชัดเป็น 2 เท่า, ถ้าเป็นวอลเปเปอร์ตั้งไว้ 1 (ได้ 1080x1920 สวยๆพอดี)
-            let exportScale = type === 'wallpaper' ? 1 : 2;
-
-            showLoader("กำลังบันทึกรูปภาพ...");
-
-            html2canvas(elementToCapture, { scale: exportScale, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
-                if(type === 'wallpaper') {
-                    // คืนค่า Scale กลับเหมือนเดิมหลังจากแคปเจอร์เสร็จ
-                    elementToCapture.style.transform = oldScale;
+                // สำหรับมือถือใช้วิธีดึง Base64 URL ที่อัพโหลดไว้แล้วไปทำเป็นไฟล์ดาวน์โหลดตรงๆ เลย 
+                // ทำให้ภาพ "ไม่เบลอ ไม่ดรอป" เพราะไม่ได้ผ่านการแคปหน้าจอ html2canvas
+                const cls = document.getElementById('wallpaper-class').value;
+                const wpData = (appData.wallpapers && appData.wallpapers[cls]) ? appData.wallpapers[cls] : null;
+                
+                if (!wpData || !wpData.url) {
+                    showToast("ไม่พบภาพตารางเรียน โปรดอัพโหลดภาพก่อนดาวน์โหลด", "error");
+                    return;
                 }
 
                 const link = document.createElement('a');
-                link.download = `exported_${type}_${new Date().getTime()}.png`;
-                link.href = canvas.toDataURL('image/png');
+                link.download = `ตารางเรียน_${cls}_${new Date().getTime()}.jpg`;
+                link.href = wpData.url;
                 link.click();
                 
+                customAlert(`ดาวน์โหลดสำเร็จ!\n\nภาพนี้ถูกอัพโหลดล่าสุดเมื่อ:\n${wpData.date}`);
+                return;
+            }
+
+            // ถ้าเป็นการดาวน์โหลดตารางเรียนหน้า A4 ให้ใช้ html2canvas แบบเดิม
+            const wrapper = document.getElementById(wrapperId);
+            showLoader("กำลังบันทึกรูปภาพ...");
+
+            html2canvas(wrapper, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `exported_timetable_${new Date().getTime()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
                 hideLoader();
-
-                if(type === 'wallpaper') {
-                    // แสดงแจ้งเตือนหลังจากดาวน์โหลดเสร็จ
-                    const cls = document.getElementById('wallpaper-class').value;
-                    const wpData = appData.wallpapers[cls];
-                    const dateStr = (wpData && wpData.date) ? wpData.date : 'ไม่ทราบวันที่ (อาจเป็นภาพเริ่มต้นของระบบ)';
-                    
-                    customAlert(`ดาวน์โหลดสำเร็จ!\n\nภาพพื้นหลังนี้ถูกอัพโหลดล่าสุดเมื่อ:\n${dateStr}`);
-                } else {
-                    showToast("ดาวน์โหลดภาพตารางเรียนสำเร็จ", "success");
-                }
-
+                showToast("ดาวน์โหลดภาพตารางเรียนสำเร็จ", "success");
             }).catch(err => {
                 hideLoader();
                 showToast("เกิดข้อผิดพลาดในการสร้างภาพ", "error");

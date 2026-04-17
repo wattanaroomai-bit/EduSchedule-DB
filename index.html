@@ -467,16 +467,16 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-1">ชม./สัปดาห์</label>
-                    <input type="number" step="any" id="subj-hrWeek" class="w-full border p-2 rounded" value="1">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-1">ชม./ภาค</label>
-                    <input type="number" step="any" id="subj-hrSem" class="w-full border p-2 rounded" value="20">
-                </div>
-                <div>
                     <label class="block text-sm font-bold mb-1">ชม./ปี</label>
                     <input type="number" step="any" id="subj-hrYear" class="w-full border p-2 rounded" value="40" oninput="autoCalculateHours(this.value)">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1 text-blue-600">ชม./ภาค (คำนวณอัตโนมัติ)</label>
+                    <input type="number" step="any" id="subj-hrSem" class="w-full border p-2 rounded bg-gray-50" value="20">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1 text-blue-600">ชม./สัปดาห์ (คำนวณอัตโนมัติ)</label>
+                    <input type="number" step="any" id="subj-hrWeek" class="w-full border p-2 rounded bg-gray-50" value="1">
                 </div>
                 <div class="col-span-2">
                     <label class="block text-sm font-bold mb-1">ครูผู้สอน</label>
@@ -926,7 +926,7 @@
                         let roomText = (type !== 'room' && displayRoom) ? `<br><span class="text-[10px] text-blue-700">(${displayRoom.name})</span>` : '';
 
                         html += `<td colspan="${colspan}" class="p-2 font-medium bg-white leading-tight">
-                                    ${subjectObj.name}
+                                    ${subjectObj.shortName || subjectObj.name}
                                     <br><span class="text-[11px] text-gray-600">${subText}</span>
                                     ${roomText}
                                  </td>`;
@@ -1094,9 +1094,24 @@
             const sortType = document.getElementById('subject-sort-type').value;
             let sortedSubjects = [...appData.subjects];
             
+            // กำหนดน้ำหนักให้ประเภทวิชา เพื่อใช้ในการเรียงลำดับ
+            const typeWeight = { 'พื้นฐาน': 1, 'เพิ่มเติม': 2, 'กิจกรรม': 3 };
+
             // เรียงลำดับวิชาตามเงื่อนไขที่เลือก
             if (sortType === 'class') {
-                sortedSubjects.sort((a, b) => a.class.localeCompare(b.class) || a.code.localeCompare(b.code));
+                sortedSubjects.sort((a, b) => {
+                    // 1. เรียงตามชั้นเรียนก่อน
+                    let classCompare = a.class.localeCompare(b.class);
+                    if (classCompare !== 0) return classCompare;
+                    
+                    // 2. ถ้าชั้นเดียวกัน ให้เรียงตามประเภทวิชา (พื้นฐาน -> เพิ่มเติม -> กิจกรรม)
+                    let weightA = typeWeight[a.type] || 4;
+                    let weightB = typeWeight[b.type] || 4;
+                    if (weightA !== weightB) return weightA - weightB;
+
+                    // 3. ถ้าประเภทเดียวกัน ให้เรียงตามรหัสวิชา
+                    return a.code.localeCompare(b.code);
+                });
             } else {
                 sortedSubjects.sort((a, b) => a.code.localeCompare(b.code));
             }

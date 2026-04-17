@@ -61,7 +61,7 @@
             #printable-area, #printable-area * { visibility: visible; }
             #printable-area { position: absolute; left: 0; top: 0; margin: 0; padding: 0; box-shadow: none; width: 297mm; }
             @page { size: A4 landscape; margin: 5mm; }
-            aside, header, button, #loader, #toast, #custom-confirm { display: none !important; }
+            aside, header, button, #loader, #toast, #custom-confirm, #custom-alert { display: none !important; }
         }
         
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -84,6 +84,18 @@
     <div id="toast" class="fixed top-5 right-5 z-[100] px-6 py-3 rounded shadow-lg transform transition-all duration-300 translate-x-full opacity-0 flex items-center space-x-2 text-white font-bold">
         <i id="toast-icon" class="fa-solid fa-check-circle"></i>
         <span id="toast-msg">ข้อความ</span>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="custom-alert" class="fixed inset-0 modal-bg hidden z-[100] flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-center">
+            <i class="fa-solid fa-circle-info text-4xl text-blue-500 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">แจ้งเตือนข้อมูลภาพ</h3>
+            <p id="alert-msg" class="text-gray-600 mb-6 whitespace-pre-line leading-relaxed">ข้อความ</p>
+            <div class="flex justify-center">
+                <button onclick="closeAlert()" class="bg-blue-600 text-white px-8 py-2 rounded hover:bg-blue-700 font-bold">ตกลง</button>
+            </div>
+        </div>
     </div>
 
     <!-- Custom Confirm Modal -->
@@ -322,15 +334,16 @@
                         <!-- Wrapper ensures exact 9:16 aspect ratio in preview visually -->
                         <div class="wallpaper-wrapper" id="wp-wrapper">
                             <div id="wallpaper-export-area" class="wallpaper-container bg-white" style="background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1080');">
-                                <div class="absolute inset-0 bg-black bg-opacity-40 p-12 flex flex-col items-center">
-                                    <h1 class="text-white text-6xl font-bold mt-20" id="wp-title">ตารางเรียน</h1>
-                                    <p class="text-white text-3xl mt-4" id="wp-school-name">โรงเรียน</p>
+                                <div class="absolute inset-0 bg-black bg-opacity-40 p-12 flex flex-col items-center justify-center">
                                     
-                                    <div class="w-full bg-white bg-opacity-90 rounded-2xl p-8 mt-12">
-                                        <table class="w-full text-center text-2xl border-collapse table-bold" id="wp-table">
-                                            <!-- Injected via JS -->
+                                    <div class="w-full bg-white bg-opacity-95 rounded-2xl p-8 shadow-2xl">
+                                        <h1 class="text-slate-800 text-5xl font-bold mb-6 text-center" id="wp-title">ป.1</h1>
+                                        
+                                        <table class="w-full text-center text-2xl border-collapse" id="wp-table">
+                                            <!-- Injected via JS (Clean layout) -->
                                         </table>
                                     </div>
+
                                 </div>
                             </div>
                         </div>
@@ -566,6 +579,14 @@
         }
         function closeConfirm() {
             document.getElementById('custom-confirm').classList.add('hidden');
+        }
+        
+        function customAlert(msg) {
+            document.getElementById('alert-msg').innerText = msg;
+            document.getElementById('custom-alert').classList.remove('hidden');
+        }
+        function closeAlert() {
+            document.getElementById('custom-alert').classList.add('hidden');
         }
 
         // --- 2. API INTEGRATION (Fetch API for GitHub) ---
@@ -902,7 +923,7 @@
 
                     html += `<td class="p-1 align-top bg-white">
                                 <div class="flex flex-col space-y-1">
-                                    <select class="w-full border p-1 text-xs rounded bg-white font-bold text-blue-800" onchange="updateSchedule('${cellKey}', this.value)">
+                                    <select class="w-full border p-1 text-xs rounded bg-white font-bold text-blue-800" onchange="updateSchedule('${cellKey}', this, this.value, '${currentSubjVal}')">
                                         ${subjOptionsHtml}
                                     </select>
                                     <select class="w-full border p-1 text-[10px] rounded bg-gray-50 text-gray-600" onchange="updateRoom('${cellKey}', this, this.value, '${currentRoomVal}')">
@@ -917,14 +938,45 @@
             table.innerHTML = html;
         }
 
-        function updateSchedule(key, subjectId) {
+        // เพิ่มพารามิเตอร์เพื่อรับ object ของ select มาทำการ reset เวลามีการแจ้งเตือน Error ชนกัน
+        function updateSchedule(key, selectElement, subjectId, previousValue) {
             if (subjectId === "") {
                 delete appData.schedule[key];
                 delete appData.roomSchedule[key]; 
             } else {
+                const subject = getSubject(subjectId);
+                const teacherId = subject ? subject.teacherId : null;
+                const [cls, day, period] = key.split('_');
+
+                // ---------------------------------------------
+                // ระบบเช็คครูชนกัน (Teacher Conflict Detection)
+                // ---------------------------------------------
+                if (teacherId) {
+                    for (let sKey in appData.schedule) {
+                        // ค้นหาคีย์ที่มีวันและคาบเดียวกัน แต่ไม่ใช่ห้องเดียวกัน
+                        if (sKey !== key && sKey.endsWith(`_${day}_${period}`)) {
+                            const otherSubjId = appData.schedule[sKey];
+                            const otherSubj = getSubject(otherSubjId);
+                            
+                            // ถ้าเจอว่าวิชาในห้องอื่นใช้ครูคนเดียวกัน = ชนกัน!
+                            if (otherSubj && otherSubj.teacherId === teacherId) {
+                                const otherCls = sKey.split('_')[0];
+                                const teacher = getTeacher(teacherId);
+                                showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${otherCls} ในคาบนี้แล้ว`, 'error');
+                                
+                                // คืนค่ากลับไปเป็นตัวเลือกเดิมทันที
+                                if (selectElement) selectElement.value = previousValue; 
+                                return; // หยุดทำงาน ไม่ต้องเซฟ
+                            }
+                        }
+                    }
+                }
+
+                // ถ้าไม่ชนกัน ให้บันทึกตารางเรียน
                 appData.schedule[key] = subjectId;
+                
+                // จัดห้องอัตโนมัติถ้ายังไม่ได้เลือก
                 if (!appData.roomSchedule[key]) {
-                    const cls = key.split('_')[0];
                     const defaultRoom = appData.rooms.find(r => r.name.includes(cls));
                     if (defaultRoom) updateRoom(key, null, defaultRoom.id, "");
                 }
@@ -1248,8 +1300,9 @@
 
         function renderMobileWallpaper() {
             const cls = document.getElementById('wallpaper-class').value;
-            document.getElementById('wp-title').innerText = `ตารางเรียน ${cls}`;
-            document.getElementById('wp-school-name').innerText = appData.settings.schoolName;
+            
+            // ใช้แค่ชื่อชั้นเรียนเดี่ยวๆ เลยให้ดู Clean
+            document.getElementById('wp-title').innerText = cls; 
             
             const wpData = (appData.wallpapers && appData.wallpapers[cls]) ? appData.wallpapers[cls] : null;
             if(wpData && wpData.url) {
@@ -1261,12 +1314,14 @@
             }
 
             const table = document.getElementById('wp-table');
-            let html = `<thead><tr class="bg-gray-200"><th class="p-2 border-2 border-black">วัน</th>`;
-            appData.periods.filter(p=>p.id!=='lunch').forEach(p => html += `<th class="p-2 border-2 border-black">${p.id}</th>`);
+            
+            // Clean Table Layout (เอาเส้นขอบแบบโบราณทิ้ง เปลี่ยนเป็นตารางโปร่งใสสวยๆ)
+            let html = `<thead><tr class="text-gray-500 border-b-2 border-gray-300"><th class="p-3">วัน</th>`;
+            appData.periods.filter(p=>p.id!=='lunch').forEach(p => html += `<th class="p-3">คาบ ${p.id}</th>`);
             html += `</tr></thead><tbody>`;
 
             appData.days.forEach(day => {
-                html += `<tr><td class="p-2 border-2 border-black font-bold bg-white">${day}</td>`;
+                html += `<tr class="border-b border-gray-100 last:border-0"><td class="p-3 font-bold text-gray-700">${day}</td>`;
                 
                 let skipPeriods = 0;
                 let regularPeriodsCount = appData.periods.filter(p => p.id !== 'lunch').length;
@@ -1291,9 +1346,9 @@
                     skipPeriods = colspan - 1;
 
                     if(subjectObj) {
-                        html += `<td colspan="${colspan}" class="p-2 border-2 border-black text-lg bg-white">${subjectObj.name}</td>`;
+                        html += `<td colspan="${colspan}" class="p-3 text-2xl font-bold text-blue-900">${subjectObj.name}</td>`;
                     } else {
-                        html += `<td class="p-2 border-2 border-black bg-white">-</td>`;
+                        html += `<td class="p-3 text-gray-300">-</td>`;
                     }
                     periodIndex++;
                 });
@@ -1321,6 +1376,8 @@
             // ถ้าเป็นตารางเรียนปกติ เร่งความชัดเป็น 2 เท่า, ถ้าเป็นวอลเปเปอร์ตั้งไว้ 1 (ได้ 1080x1920 สวยๆพอดี)
             let exportScale = type === 'wallpaper' ? 1 : 2;
 
+            showLoader("กำลังบันทึกรูปภาพ...");
+
             html2canvas(elementToCapture, { scale: exportScale, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
                 if(type === 'wallpaper') {
                     // คืนค่า Scale กลับเหมือนเดิมหลังจากแคปเจอร์เสร็จ
@@ -1331,6 +1388,24 @@
                 link.download = `exported_${type}_${new Date().getTime()}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+                
+                hideLoader();
+
+                if(type === 'wallpaper') {
+                    // แสดงแจ้งเตือนหลังจากดาวน์โหลดเสร็จ
+                    const cls = document.getElementById('wallpaper-class').value;
+                    const wpData = appData.wallpapers[cls];
+                    const dateStr = (wpData && wpData.date) ? wpData.date : 'ไม่ทราบวันที่ (อาจเป็นภาพเริ่มต้นของระบบ)';
+                    
+                    customAlert(`ดาวน์โหลดสำเร็จ!\n\nภาพพื้นหลังนี้ถูกอัพโหลดล่าสุดเมื่อ:\n${dateStr}`);
+                } else {
+                    showToast("ดาวน์โหลดภาพตารางเรียนสำเร็จ", "success");
+                }
+
+            }).catch(err => {
+                hideLoader();
+                showToast("เกิดข้อผิดพลาดในการสร้างภาพ", "error");
+                console.error(err);
             });
         }
 

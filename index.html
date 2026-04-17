@@ -62,7 +62,7 @@
             #printable-area, #printable-area * { visibility: visible; }
             #printable-area { position: absolute; left: 0; top: 0; margin: 0; padding: 0; box-shadow: none; width: 297mm; }
             @page { size: A4 landscape; margin: 5mm; }
-            aside, header, button, #loader, #toast, #custom-confirm, #custom-alert { display: none !important; }
+            aside, header, button, #loader, #toast, #custom-confirm, #custom-alert, #login-modal { display: none !important; }
         }
         
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -99,7 +99,7 @@
     <div id="custom-alert" class="fixed inset-0 modal-bg hidden z-[100] flex items-center justify-center">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-center">
             <i class="fa-solid fa-circle-info text-4xl text-blue-500 mb-4"></i>
-            <h3 class="text-xl font-bold mb-2">แจ้งเตือนข้อมูลภาพ</h3>
+            <h3 class="text-xl font-bold mb-2">แจ้งเตือน</h3>
             <p id="alert-msg" class="text-gray-600 mb-6 whitespace-pre-line leading-relaxed">ข้อความ</p>
             <div class="flex justify-center">
                 <button onclick="closeAlert()" class="bg-blue-600 text-white px-8 py-2 rounded hover:bg-blue-700 font-bold">ตกลง</button>
@@ -112,10 +112,29 @@
         <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-center">
             <i class="fa-solid fa-triangle-exclamation text-4xl text-yellow-500 mb-4"></i>
             <h3 class="text-xl font-bold mb-2">ยืนยันการทำรายการ</h3>
-            <p id="confirm-msg" class="text-gray-600 mb-6">คุณแน่ใจหรือไม่?</p>
+            <p id="confirm-msg" class="text-gray-600 mb-6 whitespace-pre-line">คุณแน่ใจหรือไม่?</p>
             <div class="flex justify-center space-x-3">
                 <button onclick="closeConfirm()" class="bg-gray-300 px-6 py-2 rounded hover:bg-gray-400 font-bold">ยกเลิก</button>
                 <button id="confirm-btn-yes" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-bold">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 modal-bg hidden z-[150] flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-8 text-center">
+            <i class="fa-solid fa-lock text-5xl text-blue-500 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">สำหรับผู้ดูแลระบบ</h3>
+            <p class="text-sm text-gray-500 mb-6">กรุณาลงชื่อเข้าใช้เพื่อจัดการข้อมูล</p>
+            
+            <input type="text" id="login-user" placeholder="ชื่อผู้ใช้" class="w-full border-2 border-gray-200 p-3 rounded mb-3 focus:outline-none focus:border-blue-500">
+            <input type="password" id="login-pass" placeholder="รหัสผ่าน" class="w-full border-2 border-gray-200 p-3 rounded mb-2 focus:outline-none focus:border-blue-500">
+            
+            <p id="login-error" class="text-red-500 text-sm hidden mb-4 font-bold">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!</p>
+            
+            <div class="flex justify-center space-x-3 mt-4">
+                <button onclick="closeLoginModal()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 font-bold w-1/2">ยกเลิก</button>
+                <button onclick="submitLogin()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-bold w-1/2">เข้าสู่ระบบ</button>
             </div>
         </div>
     </div>
@@ -129,12 +148,12 @@
         <nav class="flex-1 overflow-y-auto py-4 w-64">
             <ul class="space-y-1">
                 <li><a href="#" onclick="switchTab('view-schedule')" id="nav-view-schedule" class="nav-btn block px-6 py-3 hover:bg-slate-700 bg-slate-700 border-l-4 border-blue-500 whitespace-nowrap"><i class="fa-solid fa-calendar-alt w-6"></i> ดูตารางเรียน/สอน</a></li>
-                <li><a href="#" onclick="switchTab('build-schedule')" id="nav-build-schedule" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap"><i class="fa-solid fa-table w-6"></i> จัดตารางเรียน</a></li>
-                <li><a href="#" onclick="switchTab('manage-subjects')" id="nav-manage-subjects" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap"><i class="fa-solid fa-book w-6"></i> ข้อมูลรายวิชา</a></li>
-                <li><a href="#" onclick="switchTab('manage-teachers')" id="nav-manage-teachers" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap"><i class="fa-solid fa-users w-6"></i> ข้อมูลครู/ห้อง</a></li>
-                <li><a href="#" onclick="switchTab('manage-rooms')" id="nav-manage-rooms" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap"><i class="fa-solid fa-door-open w-6"></i> ข้อมูลห้องเรียน</a></li>
-                <li><a href="#" onclick="switchTab('mobile-wallpaper')" id="nav-mobile-wallpaper" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap"><i class="fa-solid fa-mobile-screen w-6"></i> ภาพตารางเรียนมือถือ</a></li>
-                <li><a href="#" onclick="switchTab('settings')" id="nav-settings" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap"><i class="fa-solid fa-cog w-6"></i> ตั้งค่าระบบ</a></li>
+                <li><a href="#" onclick="switchTab('mobile-wallpaper')" id="nav-mobile-wallpaper" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap"><i class="fa-solid fa-mobile-screen w-6"></i> ภาพตารางสอนมือถือ</a></li>
+                <li><a href="#" onclick="switchTab('build-schedule')" id="nav-build-schedule" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap text-gray-400"><i class="fa-solid fa-lock w-6 text-xs"></i> จัดตารางเรียน</a></li>
+                <li><a href="#" onclick="switchTab('manage-subjects')" id="nav-manage-subjects" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap text-gray-400"><i class="fa-solid fa-lock w-6 text-xs"></i> ข้อมูลรายวิชา</a></li>
+                <li><a href="#" onclick="switchTab('manage-teachers')" id="nav-manage-teachers" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap text-gray-400"><i class="fa-solid fa-lock w-6 text-xs"></i> ข้อมูลครู/ห้อง</a></li>
+                <li><a href="#" onclick="switchTab('manage-rooms')" id="nav-manage-rooms" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap text-gray-400"><i class="fa-solid fa-lock w-6 text-xs"></i> ข้อมูลห้องเรียน</a></li>
+                <li><a href="#" onclick="switchTab('settings')" id="nav-settings" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent whitespace-nowrap text-gray-400"><i class="fa-solid fa-lock w-6 text-xs"></i> ตั้งค่าระบบ</a></li>
             </ul>
         </nav>
         <div class="p-4 bg-slate-900 text-center text-xs text-green-400 w-64 whitespace-nowrap">
@@ -153,7 +172,8 @@
                 <h2 id="page-title" class="text-xl font-bold text-gray-700">ดูตารางเรียน/ตารางสอน</h2>
             </div>
             <div class="flex items-center space-x-4">
-                <span id="system-info-badge" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">ปีการศึกษา - / ภาคเรียนที่ -</span>
+                <span id="system-info-badge" class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded">ปีการศึกษา - / ภาคเรียนที่ -</span>
+                <button id="logout-btn" onclick="handleLogout()" class="hidden bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white px-3 py-1 rounded shadow transition text-sm font-bold border border-gray-300"><i class="fa-solid fa-sign-out-alt"></i> ออกจากระบบ</button>
             </div>
         </header>
 
@@ -170,8 +190,8 @@
                         </select>
                     </div>
                     <div class="space-x-2">
-                        <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700"><i class="fa-solid fa-print"></i> พิมพ์ / PDF</button>
-                        <button onclick="exportImage('printable-area')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-image"></i> บันทึกเป็นภาพ</button>
+                        <button onclick="handlePrint()" class="bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700"><i class="fa-solid fa-print"></i> พิมพ์ / PDF</button>
+                        <button onclick="handleImageExport('printable-area')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-image"></i> บันทึกเป็นภาพ</button>
                     </div>
                 </div>
 
@@ -250,10 +270,10 @@
                         </div>
                         <button onclick="openSubjectModal()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i> เพิ่มวิชาใหม่</button>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto max-h-[65vh]">
                         <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-200">
+                            <thead class="sticky top-0 bg-gray-200 shadow-sm">
+                                <tr>
                                     <th class="p-2 border">สำหรับชั้น</th>
                                     <th class="p-2 border">รหัสวิชา</th>
                                     <th class="p-2 border">ชื่อวิชา (ชื่อย่อ)</th>
@@ -331,7 +351,7 @@
             <section id="mobile-wallpaper" class="tab-content hidden">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-white p-4 rounded shadow">
-                        <h3 class="font-bold text-lg mb-4">จัดการภาพตารางเรียน (มือถือ)</h3>
+                        <h3 class="font-bold text-lg mb-4">จัดการภาพตารางสอน (มือถือ)</h3>
                         
                         <label class="block mb-2 font-bold">เลือกห้องเรียน:</label>
                         <select id="wallpaper-class" class="w-full border p-2 rounded mb-4" onchange="renderMobileWallpaper()">
@@ -339,16 +359,16 @@
                         </select>
 
                         <div class="mb-4">
-                            <label class="block mb-2 font-bold">อัพโหลดภาพตารางเรียนของคุณ (ระบบจะปรับ 9:16 อัตโนมัติ):</label>
+                            <label class="block mb-2 font-bold">อัพโหลดภาพตารางสอนของคุณ (ระบบจะปรับ 9:16 อัตโนมัติ):</label>
                             <div class="flex items-center space-x-2">
                                 <input type="file" id="bg-upload" accept="image/*" class="flex-1 border p-2 rounded" onchange="handleBgUpload(event)">
                                 <button onclick="deleteWallpaper()" class="bg-red-500 text-white px-4 py-2 rounded font-bold hover:bg-red-600 shadow"><i class="fa-solid fa-trash"></i> ลบภาพ</button>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1" id="bg-upload-status">ยังไม่มีภาพตารางเรียน (อัพโหลดล่าสุด: -)</p>
+                            <p class="text-xs text-gray-500 mt-1" id="bg-upload-status">ยังไม่มีภาพตารางสอน (อัพโหลดล่าสุด: -)</p>
                             <p class="text-[11px] text-blue-600 mt-1"><i class="fa-solid fa-info-circle"></i> ภาพจะถูกบันทึกลงฐานข้อมูลและแสดงผลแบบ 100% (ไม่ลดความสว่างหรือเบลอ)</p>
                         </div>
 
-                        <button onclick="exportImage('wp-wrapper', 'wallpaper')" class="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 shadow-lg mt-2">
+                        <button onclick="handleWallpaperExport('wp-wrapper')" class="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 shadow-lg mt-2">
                             <i class="fa-solid fa-download"></i> ดาวน์โหลดภาพนี้
                         </button>
                     </div>
@@ -359,7 +379,7 @@
                             <!-- เราลบ overlay สีดำและข้อมูลตารางออกทั้งหมด ให้เหลือแค่ภาพ Background เพียวๆ -->
                             <div id="wallpaper-export-area" class="wallpaper-container bg-gray-200 flex items-center justify-center text-center">
                                 <!-- ข้อความนี้จะแสดงเฉพาะตอนยังไม่อัพโหลดรูป -->
-                                <span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางเรียน</span>
+                                <span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางสอน</span>
                             </div>
                         </div>
                     </div>
@@ -425,6 +445,12 @@
                     </div>
 
                     <button onclick="saveSettings()" class="bg-blue-600 text-white px-4 py-3 rounded shadow hover:bg-blue-700 w-full mt-6 font-bold text-lg"><i class="fa-solid fa-cloud-arrow-up"></i> บันทึกการตั้งค่าลงคลาวด์</button>
+
+                    <!-- ล้างข้อมูลทั้งหมด ย้ายมาไว้ที่นี่ -->
+                    <div class="mt-8 border-t pt-6">
+                        <h3 class="font-bold text-lg text-red-600 mb-2"><i class="fa-solid fa-triangle-exclamation"></i> เขตอันตราย (Danger Zone)</h3>
+                        <button onclick="promptClearData()" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded shadow transition w-full border border-red-500 font-bold"><i class="fa-solid fa-trash"></i> ล้างข้อมูลทั้งหมด (รีเซ็ตระบบกลับเป็นค่าเริ่มต้น)</button>
+                    </div>
                 </div>
             </section>
 
@@ -571,12 +597,112 @@
                 { id: 't3', name: 'นางสาวครองชน ชวดพงษ์', short: 'ครูครองชน', homeroom: 'ป.3' },
                 { id: 't4', name: 'นายวัฒนา รู้ใหม่', short: 'ครูวัฒนา', homeroom: 'ป.4' },
                 { id: 't5', name: 'นางสาวศุภาวณีย์ ระคนจันทร์', short: 'ครูศุภาวณีย์', homeroom: 'ป.5' },
-                { id: 't6', name: 'นายสมพงษ์ จันเทศ', short: 'ครูสมพงษ์', homeroom: 'ป.6' }
+                { id: 't6', name: 'นายสมพงษ์ จันเทศ', short: 'ครูสมพงษ์', homeroom: 'ป.6' },
+                { id: 't7', name: 'นางสาวมนทกานต์ หาดคำ', short: 'ครูมนทกานต์', homeroom: '' }
             ],
             subjects: [
-                { id: 's1', code: 'ท11101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
-                { id: 's2', code: 'ค11101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
-                { id: 's3', code: 'อ11101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't1' }
+                // ป.1
+                { id: 's1_1', code: 'ท11101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
+                { id: 's1_2', code: 'ค11101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
+                { id: 's1_3', code: 'ว11101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't1' },
+                { id: 's1_4', code: 'ส11101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_5', code: 'ส11102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_6', code: 'พ11101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_7', code: 'ศ11101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_8', code: 'ง11101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_9', code: 'อ11101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't1' },
+                { id: 's1_10', code: 'อ11201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_11', code: 'ว11102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_12', code: 'ก11901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_13', code: 'ก11902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_14', code: 'ก11903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                { id: 's1_15', code: 'ก11904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.1', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't1' },
+                { id: 's1_16', code: 'ก11905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.1', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't1' },
+                // ป.2
+                { id: 's2_1', code: 'ท12101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't2' },
+                { id: 's2_2', code: 'ค12101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't2' },
+                { id: 's2_3', code: 'ว12101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7' },
+                { id: 's2_4', code: 'ส12101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_5', code: 'ส12102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_6', code: 'พ12101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_7', code: 'ศ12101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_8', code: 'ง12101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_9', code: 'อ12101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.2', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't2' },
+                { id: 's2_10', code: 'อ12201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_11', code: 'ว12102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
+                { id: 's2_12', code: 'ก12901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_13', code: 'ก12902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_14', code: 'ก12903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                { id: 's2_15', code: 'ก12904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.2', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't2' },
+                { id: 's2_16', code: 'ก12905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.2', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't2' },
+                // ป.3
+                { id: 's3_1', code: 'ท13101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't3' },
+                { id: 's3_2', code: 'ค13101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't3' },
+                { id: 's3_3', code: 'ว13101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7' },
+                { id: 's3_4', code: 'ส13101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_5', code: 'ส13102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_6', code: 'พ13101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_7', code: 'ศ13101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_8', code: 'ง13101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_9', code: 'อ13101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.3', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't3' },
+                { id: 's3_10', code: 'อ13201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_11', code: 'ว13102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_12', code: 'ก13901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_13', code: 'ก13902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_14', code: 'ก13903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's3_15', code: 'ก13904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.3', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't3' },
+                { id: 's3_16', code: 'ก13905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.3', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                // ป.4
+                { id: 's4_1', code: 'ท14101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't4' },
+                { id: 's4_2', code: 'ค14101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't4' },
+                { id: 's4_3', code: 'ว14101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't7' },
+                { id: 's4_4', code: 'ส14101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
+                { id: 's4_5', code: 'ส14102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's4_6', code: 'พ14101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
+                { id: 's4_7', code: 'ศ14101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                { id: 's4_8', code: 'ง14101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
+                { id: 's4_9', code: 'อ14101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.4', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
+                { id: 's4_10', code: 'อ14201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's4_11', code: 'ว14102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's4_12', code: 'ก14901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's4_13', code: 'ก14902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's4_14', code: 'ก14903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's4_15', code: 'ก14904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.4', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't4' },
+                { id: 's4_16', code: 'ก14905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.4', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                // ป.5
+                { id: 's5_1', code: 'ท15101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't5' },
+                { id: 's5_2', code: 'ค15101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't5' },
+                { id: 's5_3', code: 'ว15101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
+                { id: 's5_4', code: 'ส15101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
+                { id: 's5_5', code: 'ส15102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                { id: 's5_6', code: 'พ15101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
+                { id: 's5_7', code: 'ศ15101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                { id: 's5_8', code: 'ง15101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
+                { id: 's5_9', code: 'อ15101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.5', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
+                { id: 's5_10', code: 'อ15201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's5_11', code: 'ว15102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't3' },
+                { id: 's5_12', code: 'ก15901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                { id: 's5_13', code: 'ก15902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                { id: 's5_14', code: 'ก15903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                { id: 's5_15', code: 'ก15904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.5', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't5' },
+                { id: 's5_16', code: 'ก15905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.5', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't5' },
+                // ป.6
+                { id: 's6_1', code: 'ท16101', name: 'ภาษาไทย', shortName: 'ท', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't6' },
+                { id: 's6_2', code: 'ค16101', name: 'คณิตศาสตร์', shortName: 'ค', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't6' },
+                { id: 's6_3', code: 'ว16101', name: 'วิทยาศาสตร์และเทคโนโลยี', shortName: 'ว', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't5' },
+                { id: 's6_4', code: 'ส16101', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม', shortName: 'ส', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
+                { id: 's6_5', code: 'ส16102', name: 'ประวัติศาสตร์', shortName: 'ปว', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
+                { id: 's6_6', code: 'พ16101', name: 'สุขศึกษาและพลศึกษา', shortName: 'พ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
+                { id: 's6_7', code: 'ศ16101', name: 'ศิลปะ', shortName: 'ศ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't2' },
+                { id: 's6_8', code: 'ง16101', name: 'การงานอาชีพ', shortName: 'ง', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't6' },
+                { id: 's6_9', code: 'อ16101', name: 'ภาษาอังกฤษ', shortName: 'อ', type: 'พื้นฐาน', class: 'ป.6', hrWeek: 2, hrSem: 40, hrYear: 80, teacherId: 't4' },
+                { id: 's6_10', code: 'อ16201', name: 'ภาษาอังกฤษเพื่อการสื่อสาร', shortName: 'อ(สื่อสาร)', type: 'เพิ่มเติม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's6_11', code: 'ว16102', name: 'คอมพิวเตอร์สร้างสรรค์', shortName: 'คอมฯ', type: 'เพิ่มเติม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't4' },
+                { id: 's6_12', code: 'ก16901', name: 'แนะแนว', shortName: 'แนะแนว', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
+                { id: 's6_13', code: 'ก16902', name: 'ลูกเสือ เนตรนารี', shortName: 'ลูกเสือ', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
+                { id: 's6_14', code: 'ก16903', name: 'ชุมนุม', shortName: 'ชุมนุม', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' },
+                { id: 's6_15', code: 'ก16904', name: 'เขียนและอ่านคำพื้นฐาน', shortName: 'อ่าน/เขียน', type: 'กิจกรรม', class: 'ป.6', hrWeek: 3, hrSem: 60, hrYear: 120, teacherId: 't6' },
+                { id: 's6_16', code: 'ก16905', name: 'กิจกรรมอบรมคุณธรรมประจำสัปดาห์', shortName: 'อบรม', type: 'กิจกรรม', class: 'ป.6', hrWeek: 1, hrSem: 20, hrYear: 40, teacherId: 't6' }
             ],
             rooms: [
                 { id: 'r1', name: 'ห้อง ป.1', allowShare: false },
@@ -594,6 +720,57 @@
         };
 
         let appData = {};
+        let isAdmin = false;
+        let pendingTab = null;
+
+        // --- AUTHENTICATION LOGIC ---
+        function showLoginModal(tabId) {
+            pendingTab = tabId;
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+            pendingTab = null;
+        }
+
+        function submitLogin() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            
+            if (user === 'admin' && pass === '33030202') {
+                isAdmin = true;
+                closeLoginModal();
+                
+                // Show logout button & remove lock icons from sidebar
+                document.getElementById('logout-btn').classList.remove('hidden');
+                document.querySelectorAll('.fa-lock').forEach(icon => icon.classList.add('hidden'));
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('text-gray-400'));
+                
+                showToast("เข้าสู่ระบบผู้ดูแลสำเร็จ", "success");
+                if (pendingTab) switchTab(pendingTab);
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            isAdmin = false;
+            document.getElementById('logout-btn').classList.add('hidden');
+            
+            // Add lock icons back
+            document.querySelectorAll('#nav-build-schedule .fa-lock, #nav-manage-subjects .fa-lock, #nav-manage-teachers .fa-lock, #nav-manage-rooms .fa-lock, #nav-settings .fa-lock').forEach(icon => icon.classList.remove('hidden'));
+            
+            // Fade text out slightly for locked tabs
+            const lockedTabs = ['build-schedule', 'manage-subjects', 'manage-teachers', 'manage-rooms', 'settings'];
+            lockedTabs.forEach(id => document.getElementById('nav-' + id).classList.add('text-gray-400'));
+            
+            switchTab('view-schedule');
+            showToast("ออกจากระบบแล้ว", "success");
+        }
 
         // --- SIDEBAR TOGGLE ---
         function toggleSidebar() {
@@ -678,6 +855,12 @@
                         appData.periods = defaultData.periods; // Force upgrade if old periods structure is found
                     }
 
+                    // Force Subject Update if empty (Migration safety)
+                    if(!appData.subjects || appData.subjects.length < 50) {
+                        appData.subjects = defaultData.subjects;
+                        appData.teachers = defaultData.teachers;
+                    }
+
                     finalizeInit();
                     hideLoader();
                 })
@@ -688,6 +871,16 @@
                     finalizeInit();
                     hideLoader();
                 });
+        }
+
+        function promptClearData() {
+            customConfirm("คุณต้องการล้างข้อมูลทั้งหมด และรีเซ็ตกลับเป็นค่าเริ่มต้นจากระบบใช่หรือไม่?", () => {
+                // เคลียร์ข้อมูลทั้งหมดให้กลับเป็น DefaultData ที่จัดเตรียมไว้
+                appData = JSON.parse(JSON.stringify(defaultData));
+                saveDataAPI();
+                finalizeInit();
+                showToast("ล้างข้อมูลและโหลดค่าเริ่มต้นสำเร็จ", "success");
+            });
         }
 
         function saveDataAPI() {
@@ -764,6 +957,13 @@
         }
 
         function switchTab(tabId) {
+            // Protected routes
+            const protectedTabs = ['build-schedule', 'manage-subjects', 'manage-teachers', 'manage-rooms', 'settings'];
+            if (protectedTabs.includes(tabId) && !isAdmin) {
+                showLoginModal(tabId);
+                return;
+            }
+
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
             
@@ -771,10 +971,14 @@
                 el.classList.remove('bg-slate-700', 'border-blue-500');
                 el.classList.add('border-transparent');
             });
-            event.currentTarget.classList.add('bg-slate-700', 'border-blue-500');
-            event.currentTarget.classList.remove('border-transparent');
-            
-            document.getElementById('page-title').innerText = event.currentTarget.innerText;
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-slate-700', 'border-blue-500');
+                activeBtn.classList.remove('border-transparent');
+                
+                // ดึงเฉพาะข้อความไม่เอา tag icon
+                document.getElementById('page-title').innerText = activeBtn.innerText.trim();
+            }
 
             if(tabId === 'view-schedule') renderTimetableView();
             if(tabId === 'build-schedule') renderBuilder();
@@ -816,24 +1020,24 @@
             document.getElementById('sig-director-name').innerText = appData.settings.director;
 
             // Header Row 1 (ชื่อคาบ)
-            let html = `<thead><tr><th rowspan="2" class="w-1/12">วัน</th><th rowspan="2" class="w-1/12">กิจกรรมหน้าเสาธง<br>และโฮมรูม<br><span class="text-xs font-normal">08.00-08.30</span></th>`;
+            let html = `<thead><tr><th rowspan="2" class="w-1/12 border-2 border-black">วัน</th><th rowspan="2" class="w-1/12 border-2 border-black">กิจกรรมหน้าเสาธง<br>และโฮมรูม<br><span class="text-xs font-normal">08.00-08.30</span></th>`;
             appData.periods.forEach(p => {
-                html += `<th>${p.name}</th>`;
+                html += `<th class="border-2 border-black">${p.name}</th>`;
             });
             html += `</tr><tr>`;
             
             // Header Row 2 (เวลา)
             appData.periods.forEach(p => {
-                html += `<th class="text-xs font-normal">${p.start} - ${p.end} น.</th>`;
+                html += `<th class="text-xs font-normal border-2 border-black">${p.start} - ${p.end} น.</th>`;
             });
             html += `</tr></thead><tbody>`;
 
             appData.days.forEach((day, dayIndex) => {
-                html += `<tr><td class="font-bold">${day}</td>`;
+                html += `<tr><td class="font-bold border-2 border-black">${day}</td>`;
                 
                 // โฮมรูม (ผสานเซลล์แนวตั้งในวันแรก)
                 if (dayIndex === 0) {
-                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 align-middle text-center"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px;" class="font-bold text-blue-900">กิจกรรมหน้าเสาธงและโฮมรูม</div></td>`;
+                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 align-middle text-center border-2 border-black p-0 whitespace-nowrap overflow-hidden"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; min-height: 100px;" class="font-bold text-blue-900 inline-block w-full h-full pt-4">กิจกรรมหน้าเสาธงและโฮมรูม</div></td>`;
                 }
                 
                 let skipPeriods = 0;
@@ -844,7 +1048,7 @@
                     // ถ้าเป็นเวลาพัก
                     if (p.isBreak) { 
                         if (dayIndex === 0) {
-                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 align-middle text-center"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px;" class="font-bold text-gray-700">${p.breakName || 'พัก'}</div></td>`;
+                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 align-middle text-center border-2 border-black p-0 whitespace-nowrap overflow-hidden"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; min-height: 100px;" class="font-bold text-gray-700 inline-block w-full h-full pt-4">${p.breakName || 'พัก'}</div></td>`;
                         }
                         continue; 
                     }
@@ -923,15 +1127,15 @@
                     if (subjectObj) {
                         let teacher = subjectObj.teacherId ? getTeacher(subjectObj.teacherId) : null;
                         let subText = type === 'class' ? (teacher ? teacher.short : '') : subjectObj.showClass;
-                        let roomText = (type !== 'room' && displayRoom) ? `<br><span class="text-[10px] text-blue-700">(${displayRoom.name})</span>` : '';
+                        let roomText = (type !== 'room' && displayRoom) ? `<br><span class="text-[10px] text-blue-700 whitespace-nowrap">(${displayRoom.name})</span>` : '';
 
-                        html += `<td colspan="${colspan}" class="p-2 font-medium bg-white leading-tight">
+                        html += `<td colspan="${colspan}" class="p-2 font-medium bg-white leading-tight border-2 border-black">
                                     ${subjectObj.shortName || subjectObj.name}
-                                    <br><span class="text-[11px] text-gray-600">${subText}</span>
+                                    <br><span class="text-[11px] text-gray-600 whitespace-nowrap">${subText}</span>
                                     ${roomText}
                                  </td>`;
                     } else {
-                        html += `<td class="text-gray-300 bg-white">-</td>`;
+                        html += `<td class="text-gray-300 bg-white border-2 border-black">-</td>`;
                     }
                 }
                 html += `</tr>`;
@@ -1480,7 +1684,7 @@
                 return;
             }
             
-            customConfirm(`ต้องการลบภาพตารางเรียนของ ${cls} ใช่หรือไม่?`, () => {
+            customConfirm(`ต้องการลบภาพตารางสอนของ ${cls} ใช่หรือไม่?`, () => {
                 delete appData.wallpapers[cls];
                 saveDataAPI();
                 renderMobileWallpaper();
@@ -1499,24 +1703,48 @@
                 document.getElementById('bg-upload-status').innerText = `อัพโหลดล่าสุด: ${wpData.date}`;
             } else {
                 exportArea.style.backgroundImage = `none`;
-                exportArea.innerHTML = `<span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางเรียน</span>`;
-                document.getElementById('bg-upload-status').innerText = `ยังไม่มีภาพตารางเรียน (อัพโหลดล่าสุด: -)`;
+                exportArea.innerHTML = `<span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางสอน</span>`;
+                document.getElementById('bg-upload-status').innerText = `ยังไม่มีภาพตารางสอน (อัพโหลดล่าสุด: -)`;
             }
         }
 
-        // --- 10. EXPORT IMAGE ---
+        // --- 10. EXPORT IMAGE & PDF ---
+        
+        function handlePrint() {
+            customConfirm("ระบบกำลังจะเปิดหน้าต่างสำหรับพิมพ์เป็นกระดาษหรือ PDF\n\nโปรดตรวจสอบความเรียบร้อยของข้อความบนหน้าจอก่อนกดตกลง", () => {
+                showLoader("กำลังจัดเตรียมหน้ากระดาษ...");
+                // หน่วงเวลาเล็กน้อยให้เบราว์เซอร์ลบ Popup และจัดหน้า @media print ให้สมบูรณ์
+                setTimeout(() => {
+                    hideLoader();
+                    window.print();
+                }, 800); 
+            });
+        }
+
+        function handleImageExport(wrapperId) {
+            customConfirm("ต้องการบันทึกตารางนี้เป็นไฟล์รูปภาพ ใช่หรือไม่?\n(กรุณาตรวจสอบความถูกต้องของข้อความก่อนกดตกลง)", () => {
+                exportImage(wrapperId, 'timetable');
+            });
+        }
+
+        function handleWallpaperExport(wrapperId) {
+            customConfirm("ต้องการดาวน์โหลดภาพตารางสอนมือถือ ใช่หรือไม่?", () => {
+                exportImage(wrapperId, 'wallpaper');
+            });
+        }
+
         function exportImage(wrapperId, type = 'timetable') {
             if(type === 'wallpaper') {
                 const cls = document.getElementById('wallpaper-class').value;
                 const wpData = (appData.wallpapers && appData.wallpapers[cls]) ? appData.wallpapers[cls] : null;
                 
                 if (!wpData || !wpData.url) {
-                    showToast("ไม่พบภาพตารางเรียน โปรดอัพโหลดภาพก่อนดาวน์โหลด", "error");
+                    showToast("ไม่พบภาพตารางสอน โปรดอัพโหลดภาพก่อนดาวน์โหลด", "error");
                     return;
                 }
 
                 const link = document.createElement('a');
-                link.download = `ตารางเรียน_${cls}_${new Date().getTime()}.jpg`;
+                link.download = `ตารางสอน_${cls}_${new Date().getTime()}.jpg`;
                 link.href = wpData.url;
                 link.click();
                 
@@ -1525,20 +1753,22 @@
             }
 
             const wrapper = document.getElementById(wrapperId);
-            showLoader("กำลังบันทึกรูปภาพ...");
+            showLoader("กำลังสร้างรูปภาพความละเอียดสูง...");
 
-            html2canvas(wrapper, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `exported_timetable_${new Date().getTime()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                hideLoader();
-                showToast("ดาวน์โหลดภาพตารางเรียนสำเร็จ", "success");
-            }).catch(err => {
-                hideLoader();
-                showToast("เกิดข้อผิดพลาดในการสร้างภาพ", "error");
-                console.error(err);
-            });
+            setTimeout(() => {
+                html2canvas(wrapper, { scale: 2, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `ตารางสอน_${new Date().getTime()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    hideLoader();
+                    showToast("ดาวน์โหลดภาพตารางเรียนสำเร็จ", "success");
+                }).catch(err => {
+                    hideLoader();
+                    showToast("เกิดข้อผิดพลาดในการสร้างภาพ", "error");
+                    console.error(err);
+                });
+            }, 800);
         }
 
         // Boot

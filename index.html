@@ -15,7 +15,7 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
         
-        /* A4 Landscape Styling (Strict Enforce) */
+        /* A4 Landscape Styling (Strict Enforce for Preview) */
         .a4-landscape { 
             width: 297mm; 
             min-width: 297mm;
@@ -57,11 +57,27 @@
             transform-origin: top left; 
         }
         
+        /* Print Styles - Forced A4 Fit */
         @media print {
+            body, html { margin: 0; padding: 0; height: 100%; }
             body * { visibility: hidden; }
             #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { position: absolute; left: 0; top: 0; margin: 0; padding: 0; box-shadow: none; width: 297mm; }
-            @page { size: A4 landscape; margin: 5mm; }
+            #printable-area { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                margin: 0; 
+                padding: 0; 
+                box-shadow: none; 
+            }
+            .a4-landscape { 
+                width: 100% !important; 
+                min-width: 0 !important; 
+                min-height: 0 !important; 
+                padding: 0 !important; 
+            }
+            @page { size: A4 landscape; margin: 10mm; }
             aside, header, button, #loader, #toast, #custom-confirm, #custom-alert, #login-modal { display: none !important; }
         }
         
@@ -1020,7 +1036,7 @@
             document.getElementById('sig-director-name').innerText = appData.settings.director;
 
             // Header Row 1 (ชื่อคาบ)
-            let html = `<thead><tr><th rowspan="2" class="w-1/12 border-2 border-black">วัน</th><th rowspan="2" class="w-1/12 border-2 border-black">กิจกรรมหน้าเสาธง<br>และโฮมรูม<br><span class="text-xs font-normal">08.00-08.30</span></th>`;
+            let html = `<thead><tr><th rowspan="2" class="w-1/12 border-2 border-black">วัน</th><th rowspan="2" class="w-1/12 border-2 border-black">โฮมรูม<br><span class="text-xs font-normal">08.00-08.30</span></th>`;
             appData.periods.forEach(p => {
                 html += `<th class="border-2 border-black">${p.name}</th>`;
             });
@@ -1037,7 +1053,7 @@
                 
                 // โฮมรูม (ผสานเซลล์แนวตั้งในวันแรก)
                 if (dayIndex === 0) {
-                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 align-middle text-center border-2 border-black p-0 whitespace-nowrap overflow-hidden"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; min-height: 100px;" class="font-bold text-blue-900 inline-block w-full h-full pt-4">กิจกรรมหน้าเสาธงและโฮมรูม</div></td>`;
+                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 align-middle text-center border-2 border-black p-2"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: auto; padding: 10px 0; letter-spacing: 1px;" class="font-bold text-blue-900">โฮมรูม</div></td>`;
                 }
                 
                 let skipPeriods = 0;
@@ -1048,7 +1064,7 @@
                     // ถ้าเป็นเวลาพัก
                     if (p.isBreak) { 
                         if (dayIndex === 0) {
-                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 align-middle text-center border-2 border-black p-0 whitespace-nowrap overflow-hidden"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; min-height: 100px;" class="font-bold text-gray-700 inline-block w-full h-full pt-4">${p.breakName || 'พัก'}</div></td>`;
+                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 align-middle text-center border-2 border-black p-2"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: auto; padding: 10px 0; letter-spacing: 1px;" class="font-bold text-gray-700">${p.breakName || 'พัก'}</div></td>`;
                         }
                         continue; 
                     }

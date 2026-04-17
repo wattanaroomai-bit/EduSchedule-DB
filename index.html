@@ -15,23 +15,26 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
         
-        /* A4 Landscape Styling (Strict Enforce for Preview) */
+        /* A4 Landscape Styling (Strict Enforce for Preview and Image Export) */
         .a4-landscape { 
             width: 297mm; 
+            height: 210mm; /* บังคับความสูงตายตัวสำหรับ A4 */
             min-width: 297mm;
             min-height: 210mm; 
             margin: 0 auto; 
             background: white; 
-            padding: 15mm; 
+            padding: 10mm 15mm; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             position: relative; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-sizing: border-box; /* ควบคุมสัดส่วนไม่ให้ล้นขอบเด็ดขาด */
+            overflow: hidden;
         }
         
         .table-bold { border-collapse: collapse; width: 100%; color: black; }
-        .table-bold th, .table-bold td { border: 2px solid black !important; padding: 8px; text-align: center; }
+        .table-bold th, .table-bold td { border: 2px solid black !important; padding: 4px 2px; text-align: center; }
         .table-bold th { background-color: #e5e7eb; font-weight: bold; }
         
         /* Mobile Wallpaper Strict 9:16 Setup */
@@ -73,6 +76,7 @@
             }
             .a4-landscape { 
                 width: 100% !important; 
+                height: 100% !important;
                 min-width: 0 !important; 
                 min-height: 0 !important; 
                 padding: 0 !important; 
@@ -224,7 +228,7 @@
                             </table>
                         </div>
 
-                        <div class="flex justify-between mt-8 px-12 text-center" id="signatures-area">
+                        <div class="flex justify-between mt-4 px-12 text-center" id="signatures-area">
                             <div>
                                 <p>ลงชื่อ..................................................</p>
                                 <p class="mt-2">(<span id="sig-teacher-name">นาย/นาง...</span>)</p>
@@ -297,7 +301,7 @@
                                     <th class="p-2 border text-center">ชม./สัปดาห์</th>
                                     <th class="p-2 border text-center">ชม./ภาค</th>
                                     <th class="p-2 border text-center">ชม./ปี</th>
-                                    <th class="p-2 border">ครูผู้สอน</th>
+                                    <th class="p-2 border">ครูผู้สอนประจำวิชา</th>
                                     <th class="p-2 border text-center">จัดการ</th>
                                 </tr>
                             </thead>
@@ -390,11 +394,8 @@
                     </div>
 
                     <div class="bg-gray-800 p-4 rounded shadow flex justify-center items-center overflow-hidden min-h-[620px]">
-                        <!-- Wrapper ensures exact 9:16 aspect ratio in preview visually -->
                         <div class="wallpaper-wrapper" id="wp-wrapper">
-                            <!-- เราลบ overlay สีดำและข้อมูลตารางออกทั้งหมด ให้เหลือแค่ภาพ Background เพียวๆ -->
                             <div id="wallpaper-export-area" class="wallpaper-container bg-gray-200 flex items-center justify-center text-center">
-                                <!-- ข้อความนี้จะแสดงเฉพาะตอนยังไม่อัพโหลดรูป -->
                                 <span id="wp-placeholder-text" class="text-4xl font-bold text-gray-400">ยังไม่มีภาพตารางสอน</span>
                             </div>
                         </div>
@@ -591,7 +592,7 @@
         // ==========================================
         // ตั้งค่า URL ของ Google Apps Script ที่นี่ !!
         // ==========================================
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzxjgbAH2yQcflZ8AS7TPi6YTuVNHLBIJ2zNBsOkn4V3SMWCCutbsa0qBsUEI0iXRjX/exec"; 
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxMhnzY2zuj1KliW-MGAtbhG9STgyYpJJ67CNJuznKHrCOneSRX7SPm3-UZZtMfCrPl/exec"; 
 
         // --- 1. DATA STORE ---
         let defaultData = {
@@ -730,8 +731,8 @@
                 { id: 'r_com', name: 'ห้องคอม', allowShare: false },
                 { id: 'r_field', name: 'สนาม', allowShare: true }
             ],
-            schedule: {}, // Format: { "ป.1_จันทร์_1": "s1" }
-            roomSchedule: {}, // Format: { "ป.1_จันทร์_1": "r1" }
+            schedule: {}, 
+            slotTeacher: {}, // เก็บข้อมูลครูเฉพาะคาบ (override จากวิชา)
             wallpapers: {} 
         };
 
@@ -761,7 +762,6 @@
                 isAdmin = true;
                 closeLoginModal();
                 
-                // Show logout button & remove lock icons from sidebar
                 document.getElementById('logout-btn').classList.remove('hidden');
                 document.querySelectorAll('.fa-lock').forEach(icon => icon.classList.add('hidden'));
                 document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('text-gray-400'));
@@ -777,10 +777,8 @@
             isAdmin = false;
             document.getElementById('logout-btn').classList.add('hidden');
             
-            // Add lock icons back
             document.querySelectorAll('#nav-build-schedule .fa-lock, #nav-manage-subjects .fa-lock, #nav-manage-teachers .fa-lock, #nav-manage-rooms .fa-lock, #nav-settings .fa-lock').forEach(icon => icon.classList.remove('hidden'));
             
-            // Fade text out slightly for locked tabs
             const lockedTabs = ['build-schedule', 'manage-subjects', 'manage-teachers', 'manage-rooms', 'settings'];
             lockedTabs.forEach(id => document.getElementById('nav-' + id).classList.add('text-gray-400'));
             
@@ -868,7 +866,18 @@
                     
                     // Period Upgrade check
                     if(appData.periods && appData.periods.length > 0 && !appData.periods[0].hasOwnProperty('isBreak')) {
-                        appData.periods = defaultData.periods; // Force upgrade if old periods structure is found
+                        appData.periods = defaultData.periods;
+                    }
+
+                    // Migration for slotTeacher
+                    if(!appData.slotTeacher) {
+                        appData.slotTeacher = {};
+                        if(appData.schedule) {
+                            for(let k in appData.schedule) {
+                                let s = getSubject(appData.schedule[k]);
+                                if(s && s.teacherId) appData.slotTeacher[k] = s.teacherId;
+                            }
+                        }
                     }
 
                     // Force Subject Update if empty (Migration safety)
@@ -891,7 +900,6 @@
 
         function promptClearData() {
             customConfirm("คุณต้องการล้างข้อมูลทั้งหมด และรีเซ็ตกลับเป็นค่าเริ่มต้นจากระบบใช่หรือไม่?", () => {
-                // เคลียร์ข้อมูลทั้งหมดให้กลับเป็น DefaultData ที่จัดเตรียมไว้
                 appData = JSON.parse(JSON.stringify(defaultData));
                 saveDataAPI();
                 finalizeInit();
@@ -992,7 +1000,6 @@
                 activeBtn.classList.add('bg-slate-700', 'border-blue-500');
                 activeBtn.classList.remove('border-transparent');
                 
-                // ดึงเฉพาะข้อความไม่เอา tag icon
                 document.getElementById('page-title').innerText = activeBtn.innerText.trim();
             }
 
@@ -1036,24 +1043,26 @@
             document.getElementById('sig-director-name').innerText = appData.settings.director;
 
             // Header Row 1 (ชื่อคาบ)
-            let html = `<thead><tr><th rowspan="2" class="w-1/12 border-2 border-black">วัน</th><th rowspan="2" class="w-1/12 border-2 border-black">โฮมรูม<br><span class="text-xs font-normal">08.00-08.30</span></th>`;
+            let html = `<thead><tr><th rowspan="2" class="w-1/12 border-2 border-black p-1">วัน</th><th rowspan="2" class="w-1/12 border-2 border-black p-1">โฮมรูม<br><span class="text-[10px] font-normal">08.00-08.30</span></th>`;
             appData.periods.forEach(p => {
-                html += `<th class="border-2 border-black">${p.name}</th>`;
+                html += `<th class="border-2 border-black p-1">${p.name}</th>`;
             });
             html += `</tr><tr>`;
             
             // Header Row 2 (เวลา)
             appData.periods.forEach(p => {
-                html += `<th class="text-xs font-normal border-2 border-black">${p.start} - ${p.end} น.</th>`;
+                html += `<th class="text-[10px] font-normal border-2 border-black p-1">${p.start} - ${p.end} น.</th>`;
             });
             html += `</tr></thead><tbody>`;
 
             appData.days.forEach((day, dayIndex) => {
-                html += `<tr><td class="font-bold border-2 border-black">${day}</td>`;
+                html += `<tr><td class="font-bold border-2 border-black p-1">${day}</td>`;
                 
                 // โฮมรูม (ผสานเซลล์แนวตั้งในวันแรก)
                 if (dayIndex === 0) {
-                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 align-middle text-center border-2 border-black p-2"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: auto; padding: 10px 0; letter-spacing: 1px;" class="font-bold text-blue-900">โฮมรูม</div></td>`;
+                    html += `<td rowspan="${appData.days.length}" class="bg-blue-50 align-middle text-center border-2 border-black w-1/12 p-0">
+                                <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; white-space: nowrap;" class="font-bold text-blue-900 text-sm inline-block">กิจกรรมหน้าเสาธงและโฮมรูม</div>
+                             </td>`;
                 }
                 
                 let skipPeriods = 0;
@@ -1064,7 +1073,9 @@
                     // ถ้าเป็นเวลาพัก
                     if (p.isBreak) { 
                         if (dayIndex === 0) {
-                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 align-middle text-center border-2 border-black p-2"><div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: auto; padding: 10px 0; letter-spacing: 1px;" class="font-bold text-gray-700">${p.breakName || 'พัก'}</div></td>`;
+                            html += `<td rowspan="${appData.days.length}" class="bg-gray-100 align-middle text-center border-2 border-black w-1/12 p-0">
+                                        <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin: 0 auto; letter-spacing: 1px; white-space: nowrap;" class="font-bold text-gray-700 text-sm inline-block">${p.breakName || 'พัก'}</div>
+                                     </td>`;
                         }
                         continue; 
                     }
@@ -1072,19 +1083,30 @@
                     if (skipPeriods > 0) { skipPeriods--; continue; }
 
                     let subjectObj = null;
+                    let actualTeacherId = null;
+                    let displayClass = null;
                     let displayRoom = null;
 
                     if (type === 'class') {
                         const cellKey = `${target}_${day}_${p.id}`;
                         const subjId = appData.schedule[cellKey];
-                        const roomId = appData.roomSchedule[cellKey];
-                        if(subjId) subjectObj = getSubject(subjId);
-                        if(roomId) displayRoom = getRoom(roomId);
+                        if(subjId) {
+                            subjectObj = { ...getSubject(subjId) };
+                            actualTeacherId = (appData.slotTeacher && appData.slotTeacher[cellKey]) || subjectObj.teacherId;
+                            const roomId = appData.roomSchedule[cellKey];
+                            if(roomId) displayRoom = getRoom(roomId);
+                        }
                     } else if (type === 'teacher') {
-                        const cellKey = Object.keys(appData.schedule).find(k => k.includes(`_${day}_${p.id}`) && getSubject(appData.schedule[k])?.teacherId === target);
+                        const cellKey = Object.keys(appData.schedule).find(k => {
+                            if (!k.endsWith(`_${day}_${p.id}`)) return false;
+                            let subj = getSubject(appData.schedule[k]);
+                            let tId = (appData.slotTeacher && appData.slotTeacher[k]) ? appData.slotTeacher[k] : (subj ? subj.teacherId : null);
+                            return tId === target;
+                        });
                         if(cellKey) {
                             subjectObj = { ...getSubject(appData.schedule[cellKey]) };
                             subjectObj.showClass = cellKey.split('_')[0]; 
+                            actualTeacherId = target;
                             const roomId = appData.roomSchedule[cellKey];
                             if(roomId) displayRoom = getRoom(roomId);
                         }
@@ -1102,7 +1124,7 @@
                         }
                     }
 
-                    // Colspan Logic (ดูว่าคาบถัดไปวิชาเดียวกันหรือไม่)
+                    // Colspan Logic (ตรวจสอบว่าวิชาเดิมและครูคนเดิมหรือไม่)
                     let colspan = 1;
                     if (subjectObj) {
                         for (let next = i + 1; next < appData.periods.length; next++) {
@@ -1110,17 +1132,27 @@
                             if (nextP.isBreak) break; // ไม่ผสานข้ามเวลาพัก
 
                             let nextSubjObj = null;
+                            let nextActualTeacherId = null;
                             let nextRoomId = null;
 
                             if (type === 'class') {
                                 const nextKey = `${target}_${day}_${nextP.id}`;
                                 const nextId = appData.schedule[nextKey];
-                                if(nextId) nextSubjObj = getSubject(nextId);
+                                if(nextId) {
+                                    nextSubjObj = getSubject(nextId);
+                                    nextActualTeacherId = (appData.slotTeacher && appData.slotTeacher[nextKey]) || nextSubjObj.teacherId;
+                                }
                                 nextRoomId = appData.roomSchedule[nextKey];
                             } else if (type === 'teacher') {
-                                const nextKey = Object.keys(appData.schedule).find(k => k.includes(`_${day}_${nextP.id}`) && getSubject(appData.schedule[k])?.teacherId === target);
+                                const nextKey = Object.keys(appData.schedule).find(k => {
+                                    if (!k.endsWith(`_${day}_${nextP.id}`)) return false;
+                                    let subj = getSubject(appData.schedule[k]);
+                                    let tId = (appData.slotTeacher && appData.slotTeacher[k]) ? appData.slotTeacher[k] : (subj ? subj.teacherId : null);
+                                    return tId === target;
+                                });
                                 if(nextKey) {
                                     nextSubjObj = getSubject(appData.schedule[nextKey]);
+                                    nextActualTeacherId = target;
                                     nextRoomId = appData.roomSchedule[nextKey];
                                 }
                             } else if (type === 'room') {
@@ -1130,7 +1162,7 @@
 
                             const currentRoomId = displayRoom ? displayRoom.id : null;
 
-                            if (nextSubjObj && nextSubjObj.id === subjectObj.id && nextRoomId === currentRoomId) {
+                            if (nextSubjObj && nextSubjObj.id === subjectObj.id && nextActualTeacherId === actualTeacherId && nextRoomId === currentRoomId) {
                                 colspan++;
                             } else {
                                 break;
@@ -1141,14 +1173,16 @@
                     skipPeriods = colspan - 1;
 
                     if (subjectObj) {
-                        let teacher = subjectObj.teacherId ? getTeacher(subjectObj.teacherId) : null;
+                        let teacher = actualTeacherId ? getTeacher(actualTeacherId) : null;
                         let subText = type === 'class' ? (teacher ? teacher.short : '') : subjectObj.showClass;
-                        let roomText = (type !== 'room' && displayRoom) ? `<br><span class="text-[10px] text-blue-700 whitespace-nowrap">(${displayRoom.name})</span>` : '';
+                        let roomText = (type !== 'room' && displayRoom) ? `<br><span class="text-[10px] text-red-600 font-bold whitespace-nowrap leading-none mt-0.5">(${displayRoom.name})</span>` : '';
 
-                        html += `<td colspan="${colspan}" class="p-2 font-medium bg-white leading-tight border-2 border-black">
-                                    ${subjectObj.shortName || subjectObj.name}
-                                    <br><span class="text-[11px] text-gray-600 whitespace-nowrap">${subText}</span>
-                                    ${roomText}
+                        html += `<td colspan="${colspan}" class="p-1 font-medium bg-white border-2 border-black align-middle" style="height: 75px; max-height: 75px;">
+                                    <div class="flex flex-col justify-center items-center w-full h-full px-1 overflow-hidden">
+                                        <span class="text-[12px] font-bold text-blue-900 leading-[1.2] line-clamp-2 w-full break-words text-center">${subjectObj.shortName || subjectObj.name}</span>
+                                        <span class="text-[10px] text-gray-600 leading-none mt-1 truncate w-full text-center">${subText}</span>
+                                        ${roomText}
+                                    </div>
                                  </td>`;
                     } else {
                         html += `<td class="text-gray-300 bg-white border-2 border-black">-</td>`;
@@ -1217,6 +1251,15 @@
                         }
                     });
 
+                    // สร้าง Dropdown ครูแทนห้อง (หรือให้มีทั้งคู่)
+                    const currentTeacherVal = appData.slotTeacher && appData.slotTeacher[cellKey] ? appData.slotTeacher[cellKey] : "";
+                    let teacherOptionsHtml = `<option value="">-- ไม่ระบุครู --</option>`;
+                    appData.teachers.forEach(t => {
+                        let selectedStr = (currentTeacherVal === t.id) ? 'selected' : '';
+                        teacherOptionsHtml += `<option value="${t.id}" ${selectedStr}>${t.short}</option>`;
+                    });
+
+                    // Dropdown ห้องเรียน
                     let roomOptionsHtml = `<option value="">-- ไม่ระบุห้อง --</option>`;
                     appData.rooms.forEach(r => {
                         let selectedStr = (currentRoomVal === r.id) ? 'selected' : '';
@@ -1224,11 +1267,14 @@
                     });
 
                     html += `<td class="p-1 align-top bg-white">
-                                <div class="flex flex-col space-y-1">
+                                <div class="flex flex-col space-y-0.5">
                                     <select class="w-full border p-1 text-xs rounded bg-white font-bold text-blue-800" onchange="updateSchedule('${cellKey}', this, this.value, '${currentSubjVal}')">
                                         ${subjOptionsHtml}
                                     </select>
-                                    <select class="w-full border p-1 text-[10px] rounded bg-gray-50 text-gray-600" onchange="updateRoom('${cellKey}', this, this.value, '${currentRoomVal}')">
+                                    <select class="w-full border p-0.5 text-[10px] rounded bg-blue-50 text-blue-800" onchange="updateSlotTeacher('${cellKey}', this, this.value, '${currentTeacherVal}')">
+                                        ${teacherOptionsHtml}
+                                    </select>
+                                    <select class="w-full border p-0.5 text-[10px] rounded bg-gray-50 text-gray-600" onchange="updateRoom('${cellKey}', this, this.value, '${currentRoomVal}')">
                                         ${roomOptionsHtml}
                                     </select>
                                 </div>
@@ -1240,40 +1286,38 @@
             table.innerHTML = html;
         }
 
-        // ระบบเช็คครูชนกัน และอัพเดทข้อมูลตารางเรียน
+        // ระบบเช็คครูชนกันเมื่อเลือกวิชาใหม่
         function updateSchedule(key, selectElement, subjectId, previousValue) {
+            if (!appData.slotTeacher) appData.slotTeacher = {};
             if (subjectId === "") {
                 delete appData.schedule[key];
-                delete appData.roomSchedule[key]; 
+                delete appData.slotTeacher[key]; 
+                delete appData.roomSchedule[key];
             } else {
                 const subject = getSubject(subjectId);
                 const teacherId = subject ? subject.teacherId : null;
                 const [cls, day, pId] = key.split('_');
 
-                // ---------------------------------------------
-                // ระบบเช็คครูชนกัน (Teacher Conflict Detection)
-                // ---------------------------------------------
+                // เช็คครูชนกัน (Teacher Conflict Detection)
                 if (teacherId) {
-                    for (let sKey in appData.schedule) {
-                        if (sKey !== key && sKey.endsWith(`_${day}_${pId}`)) {
-                            const otherSubjId = appData.schedule[sKey];
-                            const otherSubj = getSubject(otherSubjId);
-                            
-                            // ชนกัน!
-                            if (otherSubj && otherSubj.teacherId === teacherId) {
-                                const otherCls = sKey.split('_')[0];
-                                const teacher = getTeacher(teacherId);
-                                showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${otherCls} ในคาบนี้แล้ว`, 'error');
-                                
-                                if (selectElement) selectElement.value = previousValue; 
-                                return;
-                            }
+                    for (let sKey in appData.slotTeacher) {
+                        if (sKey !== key && sKey.endsWith(`_${day}_${pId}`) && appData.slotTeacher[sKey] === teacherId) {
+                            const otherCls = sKey.split('_')[0];
+                            const teacher = getTeacher(teacherId);
+                            showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${otherCls} ในคาบนี้แล้ว`, 'error');
+                            if (selectElement) selectElement.value = previousValue; 
+                            return;
                         }
                     }
                 }
 
-                // ถ้าไม่ชนกัน ให้บันทึก
+                // ถ้าไม่ชนกัน ให้บันทึกวิชาและครูค่าเริ่มต้นลงไป
                 appData.schedule[key] = subjectId;
+                if(teacherId) {
+                    appData.slotTeacher[key] = teacherId;
+                } else {
+                    delete appData.slotTeacher[key];
+                }
                 
                 // จัดห้องอัตโนมัติถ้ายังไม่ได้เลือก
                 if (!appData.roomSchedule[key]) {
@@ -1284,9 +1328,36 @@
             renderBuilder(); 
         }
 
+        // ระบบเช็คครูชนกันเมื่อสลับครูจากตัวเลือก
+        function updateSlotTeacher(key, selectElement, teacherId, previousValue) {
+            if (!appData.slotTeacher) appData.slotTeacher = {};
+            if (!teacherId) {
+                delete appData.slotTeacher[key];
+                renderBuilder();
+                return;
+            }
+
+            const [cls, day, pId] = key.split('_');
+
+            // ตรวจสอบว่าครูคนนี้สอนห้องอื่นในคาบนี้อยู่หรือเปล่า
+            for (let sKey in appData.slotTeacher) {
+                if (sKey !== key && sKey.endsWith(`_${day}_${pId}`) && appData.slotTeacher[sKey] === teacherId) {
+                    const otherCls = sKey.split('_')[0];
+                    const teacher = getTeacher(teacherId);
+                    showToast(`จัดไม่ได้! ${teacher ? teacher.short : 'ครู'} มีสอนชั้น ${otherCls} ในคาบนี้แล้ว`, 'error');
+                    if(selectElement) selectElement.value = previousValue; 
+                    return;
+                }
+            }
+
+            appData.slotTeacher[key] = teacherId;
+            if(!selectElement) renderBuilder(); 
+        }
+
         function updateRoom(key, selectElement, roomId, previousValue) {
             if (!roomId) {
                 delete appData.roomSchedule[key];
+                renderBuilder();
                 return;
             }
 
@@ -1314,22 +1385,17 @@
             const sortType = document.getElementById('subject-sort-type').value;
             let sortedSubjects = [...appData.subjects];
             
-            // กำหนดน้ำหนักให้ประเภทวิชา เพื่อใช้ในการเรียงลำดับ
             const typeWeight = { 'พื้นฐาน': 1, 'เพิ่มเติม': 2, 'กิจกรรม': 3 };
 
-            // เรียงลำดับวิชาตามเงื่อนไขที่เลือก
             if (sortType === 'class') {
                 sortedSubjects.sort((a, b) => {
-                    // 1. เรียงตามชั้นเรียนก่อน
                     let classCompare = a.class.localeCompare(b.class);
                     if (classCompare !== 0) return classCompare;
                     
-                    // 2. ถ้าชั้นเดียวกัน ให้เรียงตามประเภทวิชา (พื้นฐาน -> เพิ่มเติม -> กิจกรรม)
                     let weightA = typeWeight[a.type] || 4;
                     let weightB = typeWeight[b.type] || 4;
                     if (weightA !== weightB) return weightA - weightB;
 
-                    // 3. ถ้าประเภทเดียวกัน ให้เรียงตามรหัสวิชา
                     return a.code.localeCompare(b.code);
                 });
             } else {
@@ -1428,7 +1494,7 @@
                 for (const key in appData.schedule) {
                     if(appData.schedule[key] === id) {
                         delete appData.schedule[key];
-                        delete appData.roomSchedule[key];
+                        if (appData.slotTeacher) delete appData.slotTeacher[key];
                     }
                 }
                 saveDataAPI();
@@ -1617,11 +1683,10 @@
                 const deletedPeriodId = appData.periods[index].id;
                 appData.periods.splice(index, 1);
                 
-                // Clear schedule for deleted period
                 for (let key in appData.schedule) {
                     if (key.endsWith(`_${deletedPeriodId}`)) {
                         delete appData.schedule[key];
-                        delete appData.roomSchedule[key];
+                        if (appData.slotTeacher) delete appData.slotTeacher[key];
                     }
                 }
                 renderSettingsPeriods();
@@ -1634,7 +1699,6 @@
             appData.settings.schoolName = document.getElementById('set-school').value;
             appData.settings.director = document.getElementById('set-director').value;
             
-            // อัพเดทชื่อโรงเรียนที่เมนู
             document.getElementById('sidebar-school-name').innerText = appData.settings.schoolName || "โรงเรียน";
             
             saveDataAPI();
@@ -1729,7 +1793,6 @@
         function handlePrint() {
             customConfirm("ระบบกำลังจะเปิดหน้าต่างสำหรับพิมพ์เป็นกระดาษหรือ PDF\n\nโปรดตรวจสอบความเรียบร้อยของข้อความบนหน้าจอก่อนกดตกลง", () => {
                 showLoader("กำลังจัดเตรียมหน้ากระดาษ...");
-                // หน่วงเวลาเล็กน้อยให้เบราว์เซอร์ลบ Popup และจัดหน้า @media print ให้สมบูรณ์
                 setTimeout(() => {
                     hideLoader();
                     window.print();

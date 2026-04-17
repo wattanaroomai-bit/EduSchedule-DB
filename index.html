@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการตารางเรียน - โรงเรียนบ้านนกยูง</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for Image Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
+        
+        /* A4 Landscape Styling (Strict Enforce) */
+        .a4-landscape { 
+            width: 297mm; 
+            min-width: 297mm;
+            min-height: 210mm; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 15mm; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            position: relative; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .table-bold { border-collapse: collapse; width: 100%; color: black; }
+        .table-bold th, .table-bold td { border: 2px solid black !important; padding: 8px; text-align: center; }
+        .table-bold th { background-color: #e5e7eb; font-weight: bold; }
+        
+        /* Mobile Wallpaper Strict 9:16 Setup */
+        .wallpaper-wrapper {
+            width: 324px; /* 1080 * 0.3 */
+            height: 576px; /* 1920 * 0.3 */
+            position: relative;
+            margin: 0 auto;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .wallpaper-container { 
+            width: 1080px; 
+            height: 1920px; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-size: cover; 
+            background-position: center; 
+            transform: scale(0.3); 
+            transform-origin: top left; 
+        }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #printable-area, #printable-area * { visibility: visible; }
+            #printable-area { position: absolute; left: 0; top: 0; margin: 0; padding: 0; box-shadow: none; width: 297mm; }
+            @page { size: A4 landscape; margin: 5mm; }
+            aside, header, button, #loader, #toast, #custom-confirm { display: none !important; }
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .modal-bg { background-color: rgba(0,0,0,0.5); }
+        
+        /* Spinner */
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 4px solid white; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-gray-800 relative">
+
+    <!-- Global Loader Overlay -->
+    <div id="loader" class="fixed inset-0 bg-slate-900 bg-opacity-80 z-[100] flex flex-col items-center justify-center text-white hidden">
+        <div class="spinner mb-4"></div>
+        <h2 class="text-xl font-bold" id="loader-text">กำลังประมวลผล...</h2>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-[100] px-6 py-3 rounded shadow-lg transform transition-all duration-300 translate-x-full opacity-0 flex items-center space-x-2 text-white font-bold">
+        <i id="toast-icon" class="fa-solid fa-check-circle"></i>
+        <span id="toast-msg">ข้อความ</span>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="custom-confirm" class="fixed inset-0 modal-bg hidden z-[90] flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-center">
+            <i class="fa-solid fa-triangle-exclamation text-4xl text-yellow-500 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">ยืนยันการทำรายการ</h3>
+            <p id="confirm-msg" class="text-gray-600 mb-6">คุณแน่ใจหรือไม่?</p>
+            <div class="flex justify-center space-x-3">
+                <button onclick="closeConfirm()" class="bg-gray-300 px-6 py-2 rounded hover:bg-gray-400 font-bold">ยกเลิก</button>
+                <button id="confirm-btn-yes" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-bold">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-slate-800 text-white flex flex-col transition-all duration-300 z-20">
+        <div class="p-4 bg-slate-900 text-center">
+            <h1 class="text-xl font-bold text-blue-400"><i class="fa-solid fa-school"></i> ระบบตารางเรียน</h1>
+            <p class="text-xs text-gray-400 mt-1">GitHub + GAS API</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li><a href="#" onclick="switchTab('view-schedule')" id="nav-view-schedule" class="nav-btn block px-6 py-3 hover:bg-slate-700 bg-slate-700 border-l-4 border-blue-500"><i class="fa-solid fa-calendar-alt w-6"></i> ดูตารางเรียน/สอน</a></li>
+                <li><a href="#" onclick="switchTab('build-schedule')" id="nav-build-schedule" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-table w-6"></i> จัดตารางเรียน</a></li>
+                <li><a href="#" onclick="switchTab('manage-subjects')" id="nav-manage-subjects" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-book w-6"></i> ข้อมูลรายวิชา</a></li>
+                <li><a href="#" onclick="switchTab('manage-teachers')" id="nav-manage-teachers" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-users w-6"></i> ข้อมูลครู/ห้อง</a></li>
+                <li><a href="#" onclick="switchTab('manage-rooms')" id="nav-manage-rooms" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-door-open w-6"></i> ข้อมูลห้องเรียน</a></li>
+                <li><a href="#" onclick="switchTab('mobile-wallpaper')" id="nav-mobile-wallpaper" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-mobile-screen w-6"></i> วอลเปเปอร์มือถือ</a></li>
+                <li><a href="#" onclick="switchTab('settings')" id="nav-settings" class="nav-btn block px-6 py-3 hover:bg-slate-700 border-l-4 border-transparent"><i class="fa-solid fa-cog w-6"></i> ตั้งค่าระบบ</a></li>
+            </ul>
+        </nav>
+        <div class="p-4 bg-slate-900 text-center text-xs text-green-400">
+            <i class="fa-solid fa-cloud"></i> เชื่อมต่อ Google Sheets แล้ว
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-100">
+        <!-- Header -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
+            <h2 id="page-title" class="text-xl font-bold text-gray-700">ดูตารางเรียน/ตารางสอน</h2>
+            <div class="flex items-center space-x-4">
+                <span id="system-info-badge" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">ปีการศึกษา - / ภาคเรียนที่ -</span>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 hide-scrollbar relative" id="main-container">
+            
+            <!-- 1. View Schedule Tab -->
+            <section id="view-schedule" class="tab-content block">
+                <div class="bg-white p-4 rounded shadow mb-4 flex justify-between items-center">
+                    <div class="flex space-x-2 items-center">
+                        <label class="font-bold">เลือกตารางที่ต้องการดู:</label>
+                        <select id="view-type" class="border rounded p-2" onchange="renderTimetableView()">
+                            <!-- Inject via JS -->
+                        </select>
+                    </div>
+                    <div class="space-x-2">
+                        <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700"><i class="fa-solid fa-print"></i> พิมพ์ / PDF</button>
+                        <button onclick="exportImage('printable-area')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-image"></i> บันทึกเป็นภาพ</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto bg-gray-200 p-8 flex justify-center">
+                    <div id="printable-area" class="a4-landscape">
+                        <div>
+                            <div class="text-center mb-6">
+                                <h2 class="text-2xl font-bold" id="print-title">ตารางเรียน</h2>
+                                <h3 class="text-lg" id="print-subtitle">ภาคเรียนที่ - ปีการศึกษา - โรงเรียน -</h3>
+                            </div>
+                            
+                            <table class="table-bold text-sm w-full" id="timetable-display">
+                                <!-- Injected via JS -->
+                            </table>
+                        </div>
+
+                        <div class="flex justify-between mt-8 px-12 text-center" id="signatures-area">
+                            <div>
+                                <p>ลงชื่อ..................................................</p>
+                                <p class="mt-2">(<span id="sig-teacher-name">นาย/นาง...</span>)</p>
+                                <p id="sig-teacher-role">ครูประจำชั้น</p>
+                            </div>
+                            <div>
+                                <p>ลงชื่อ..................................................</p>
+                                <p class="mt-2">(<span id="sig-director-name">-</span>)</p>
+                                <p>ผู้อำนวยการโรงเรียน</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Build Schedule Tab -->
+            <section id="build-schedule" class="tab-content hidden">
+                <div class="grid grid-cols-4 gap-4 h-full">
+                    <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col h-full">
+                        <h3 class="font-bold text-lg mb-2"><i class="fa-solid fa-tools"></i> เครื่องมือจัดตาราง</h3>
+                        
+                        <label class="block text-sm font-bold mt-2">เลือกชั้นเรียน:</label>
+                        <select id="build-class-select" class="w-full border p-2 rounded mb-4" onchange="renderBuilder()">
+                            <!-- Inject via JS -->
+                        </select>
+
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-2 mb-4 text-sm">
+                            <p class="font-bold">ตรวจสอบคาบเรียน</p>
+                            <p>จัดแล้ว: <span id="scheduled-hours-count" class="font-bold text-blue-700">0</span> / 30 ชม.</p>
+                        </div>
+
+                        <label class="block text-sm font-bold">วิชาที่ยังจัดไม่ครบ:</label>
+                        <div id="remaining-subjects-list" class="flex-1 overflow-y-auto border p-2 bg-gray-50 rounded mt-1 space-y-2 text-sm">
+                            <!-- Injected via JS -->
+                        </div>
+                        
+                        <button onclick="saveDataAPI()" class="w-full bg-blue-600 text-white px-4 py-3 rounded hover:bg-blue-700 mt-4 font-bold shadow"><i class="fa-solid fa-cloud-arrow-up"></i> บันทึกตารางลงคลาวด์</button>
+                    </div>
+
+                    <div class="col-span-3 bg-white p-4 rounded shadow overflow-x-auto">
+                        <p class="text-red-500 text-sm mb-2"><i class="fa-solid fa-info-circle"></i> เปลี่ยนแปลงข้อมูลจะถูกจำไว้ชั่วคราว กด "บันทึกตารางลงคลาวด์" เพื่อจัดเก็บถาวร</p>
+                        <table class="table-bold text-sm w-full" id="builder-table">
+                            <!-- Injected via JS -->
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Manage Subjects Tab -->
+            <section id="manage-subjects" class="tab-content hidden">
+                <div class="bg-white p-4 rounded shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">จัดการข้อมูลรายวิชา</h3>
+                        <button onclick="openSubjectModal()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i> เพิ่มวิชาใหม่</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="p-2 border">รหัสวิชา</th>
+                                    <th class="p-2 border">ชื่อวิชา</th>
+                                    <th class="p-2 border">ประเภท</th>
+                                    <th class="p-2 border">สำหรับชั้น</th>
+                                    <th class="p-2 border">ชม./สัปดาห์</th>
+                                    <th class="p-2 border">ชม./ภาค</th>
+                                    <th class="p-2 border">ชม./ปี</th>
+                                    <th class="p-2 border">ครูผู้สอน</th>
+                                    <th class="p-2 border text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subject-table-body">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+             <!-- 4. Manage Teachers Tab -->
+             <section id="manage-teachers" class="tab-content hidden">
+                <div class="bg-white p-4 rounded shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">จัดการข้อมูลครูและประจำชั้น</h3>
+                        <button onclick="openTeacherModal()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i> เพิ่มครูใหม่</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="p-2 border text-center">ลำดับ</th>
+                                    <th class="p-2 border">ชื่อ-นามสกุล</th>
+                                    <th class="p-2 border">ชื่อย่อ (ใช้ในตาราง)</th>
+                                    <th class="p-2 border text-center">ครูประจำชั้น</th>
+                                    <th class="p-2 border text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacher-table-body">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+             <!-- 4.5 Manage Rooms Tab -->
+             <section id="manage-rooms" class="tab-content hidden">
+                <div class="bg-white p-4 rounded shadow max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="font-bold text-lg">จัดการข้อมูลห้องเรียนและสถานที่</h3>
+                            <p class="text-sm text-gray-500">ระบบจะป้องกันห้องชนกัน ยกเว้นห้องที่ตั้งให้ใช้ร่วมกันได้</p>
+                        </div>
+                        <button onclick="openRoomModal()" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i> เพิ่มสถานที่ใหม่</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="p-2 border text-center">ลำดับ</th>
+                                    <th class="p-2 border">ชื่อห้อง / สถานที่</th>
+                                    <th class="p-2 border text-center">อนุญาตให้ใช้ร่วมกันได้</th>
+                                    <th class="p-2 border text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="room-table-body">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Mobile Wallpaper Tab -->
+            <section id="mobile-wallpaper" class="tab-content hidden">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded shadow">
+                        <h3 class="font-bold text-lg mb-4">สร้างวอลเปเปอร์มือถือ (9:16)</h3>
+                        
+                        <label class="block mb-2 font-bold">เลือกห้องเรียน:</label>
+                        <select id="wallpaper-class" class="w-full border p-2 rounded mb-4" onchange="renderMobileWallpaper()">
+                            <!-- Injected via JS -->
+                        </select>
+
+                        <div class="mb-4">
+                            <label class="block mb-2 font-bold">อัพโหลดพื้นหลังแนวตั้ง (ระบบจะปรับเป็น 9:16 อัตโนมัติ):</label>
+                            <input type="file" id="bg-upload" accept="image/*" class="w-full border p-2 rounded" onchange="handleBgUpload(event)">
+                            <p class="text-xs text-gray-500 mt-1" id="bg-upload-status">ยังไม่มีภาพพื้นหลัง (อัพโหลดล่าสุด: -)</p>
+                            <p class="text-[11px] text-blue-600 mt-1"><i class="fa-solid fa-info-circle"></i> ข้อมูลจะถูกบีบอัดและบันทึกอัตโนมัติ ทำให้ภาพจะอยู่ถาวรจนกว่าจะเปลี่ยนใหม่</p>
+                        </div>
+
+                        <button onclick="exportImage('wp-wrapper', 'wallpaper')" class="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 shadow-lg mt-2">
+                            <i class="fa-solid fa-download"></i> ดาวน์โหลดวอลเปเปอร์
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-800 p-4 rounded shadow flex justify-center items-center overflow-hidden min-h-[620px]">
+                        <!-- Wrapper ensures exact 9:16 aspect ratio in preview visually -->
+                        <div class="wallpaper-wrapper" id="wp-wrapper">
+                            <div id="wallpaper-export-area" class="wallpaper-container bg-white" style="background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1080');">
+                                <div class="absolute inset-0 bg-black bg-opacity-40 p-12 flex flex-col items-center">
+                                    <h1 class="text-white text-6xl font-bold mt-20" id="wp-title">ตารางเรียน</h1>
+                                    <p class="text-white text-3xl mt-4" id="wp-school-name">โรงเรียน</p>
+                                    
+                                    <div class="w-full bg-white bg-opacity-90 rounded-2xl p-8 mt-12">
+                                        <table class="w-full text-center text-2xl border-collapse table-bold" id="wp-table">
+                                            <!-- Injected via JS -->
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. Settings Tab -->
+            <section id="settings" class="tab-content hidden">
+                <div class="bg-white p-6 rounded shadow max-w-2xl mx-auto">
+                    <h3 class="font-bold text-xl mb-4 border-b pb-2">ตั้งค่าระบบทั่วไป</h3>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">ปีการศึกษา:</label>
+                            <input type="number" id="set-year" class="w-full border p-2 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">ภาคเรียนที่:</label>
+                            <select id="set-term" class="w-full border p-2 rounded">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-1">ชื่อโรงเรียน:</label>
+                        <input type="text" id="set-school" class="w-full border p-2 rounded">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-1">ชื่อผู้อำนวยการ (ผอ.):</label>
+                        <input type="text" id="set-director" class="w-full border p-2 rounded">
+                    </div>
+
+                    <button onclick="saveSettings()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 w-full mt-4"><i class="fa-solid fa-cloud-arrow-up"></i> บันทึกการตั้งค่าลงคลาวด์</button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Modals (Hidden by default) -->
+    
+    <!-- Subject Modal -->
+    <div id="subject-modal" class="fixed inset-0 modal-bg hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4" id="subject-modal-title">เพิ่มวิชาใหม่</h3>
+            <input type="hidden" id="subj-id">
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div class="col-span-2">
+                    <label class="block text-sm font-bold mb-1">ชื่อวิชา</label>
+                    <input type="text" id="subj-name" class="w-full border p-2 rounded" placeholder="เช่น ภาษาไทย">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">รหัสวิชา</label>
+                    <input type="text" id="subj-code" class="w-full border p-2 rounded" placeholder="เช่น ท11101">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">ประเภท</label>
+                    <select id="subj-type" class="w-full border p-2 rounded">
+                        <option value="พื้นฐาน">พื้นฐาน</option>
+                        <option value="เพิ่มเติม">เพิ่มเติม</option>
+                        <option value="กิจกรรม">กิจกรรม</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">สำหรับชั้น</label>
+                    <select id="subj-class" class="w-full border p-2 rounded">
+                        <option value="ป.1">ป.1</option><option value="ป.2">ป.2</option><option value="ป.3">ป.3</option>
+                        <option value="ป.4">ป.4</option><option value="ป.5">ป.5</option><option value="ป.6">ป.6</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">ชม./สัปดาห์</label>
+                    <input type="number" id="subj-hrWeek" class="w-full border p-2 rounded" value="1">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">ชม./ภาค</label>
+                    <input type="number" id="subj-hrSem" class="w-full border p-2 rounded" value="20">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">ชม./ปี</label>
+                    <input type="number" id="subj-hrYear" class="w-full border p-2 rounded" value="40">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-bold mb-1">ครูผู้สอน</label>
+                    <select id="subj-teacher" class="w-full border p-2 rounded">
+                        <!-- Inject via JS -->
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button onclick="closeSubjectModal()" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 font-bold">ยกเลิก</button>
+                <button onclick="saveSubjectForm()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Modal -->
+    <div id="teacher-modal" class="fixed inset-0 modal-bg hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
+            <h3 class="text-xl font-bold mb-4" id="teacher-modal-title">เพิ่มครูใหม่</h3>
+            <input type="hidden" id="teacher-id">
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">ชื่อ-นามสกุล เต็ม</label>
+                    <input type="text" id="teacher-name" class="w-full border p-2 rounded" placeholder="เช่น นายสมชาย ใจดี">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">ชื่อย่อ (แสดงในตาราง)</label>
+                    <input type="text" id="teacher-short" class="w-full border p-2 rounded" placeholder="เช่น ครูสมชาย">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">ครูประจำชั้น</label>
+                    <select id="teacher-homeroom" class="w-full border p-2 rounded">
+                        <option value="">-- ไม่ได้เป็นประจำชั้น --</option>
+                        <option value="ป.1">ป.1</option><option value="ป.2">ป.2</option><option value="ป.3">ป.3</option>
+                        <option value="ป.4">ป.4</option><option value="ป.5">ป.5</option><option value="ป.6">ป.6</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button onclick="closeTeacherModal()" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 font-bold">ยกเลิก</button>
+                <button onclick="saveTeacherForm()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Modal -->
+    <div id="room-modal" class="fixed inset-0 modal-bg hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
+            <h3 class="text-xl font-bold mb-4" id="room-modal-title">เพิ่มห้องเรียนใหม่</h3>
+            <input type="hidden" id="room-id">
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">ชื่อห้อง / สถานที่</label>
+                    <input type="text" id="room-name" class="w-full border p-2 rounded" placeholder="เช่น ห้อง ป.1, ห้องคอม, สนามกีฬา">
+                </div>
+                <div class="flex items-center space-x-2 mt-2">
+                    <input type="checkbox" id="room-allow-share" class="w-5 h-5 text-blue-600">
+                    <label for="room-allow-share" class="text-sm font-bold cursor-pointer">อนุญาตให้ใช้ร่วมกันได้ (ไม่เช็คชน)</label>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button onclick="closeRoomModal()" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 font-bold">ยกเลิก</button>
+                <button onclick="saveRoomForm()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Logic -->
+    <script>
+        // ==========================================
+        // ตั้งค่า URL ของ Google Apps Script ที่นี่ !!
+        // ==========================================
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzxjgbAH2yQcflZ8AS7TPi6YTuVNHLBIJ2zNBsOkn4V3SMWCCutbsa0qBsUEI0iXRjX/exec"; 
+
+        // --- 1. DATA STORE ---
+        let defaultData = {
+            settings: { year: '2568', term: '2', schoolName: 'บ้านนกยูง (อสพป.30)', director: 'นายบุญธรรม บุญลาภังค์' },
+            periods: [
+                { id: 1, start: '08.30', end: '09.30' }, { id: 2, start: '09.30', end: '10.30' },
+                { id: 3, start: '10.30', end: '11.30' }, { id: 'lunch', name: 'พักกลางวัน', start: '11.30', end: '12.30' },
+                { id: 4, start: '12.30', end: '13.30' }, { id: 5, start: '13.30', end: '14.30' }, { id: 6, start: '14.30', end: '15.30' }
+            ],
+            days: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'],
+            classes: ['ป.1', 'ป.2', 'ป.3', 'ป.4', 'ป.5', 'ป.6'],
+            teachers: [
+                { id: 't1', name: 'นางสาววรรณภา พลแก้ว', short: 'ครูวรรณภา', homeroom: 'ป.1' },
+                { id: 't2', name: 'นางประภาพร สร้อยแม้น', short: 'ครูประภาพร', homeroom: 'ป.2' },
+                { id: 't3', name: 'นางสาวครองชน ชวดพงษ์', short: 'ครูครองชน', homeroom: 'ป.3' },
+                { id: 't4', name: 'นายวัฒนา รู้ใหม่', short: 'ครูวัฒนา', homeroom: 'ป.4' },
+                { id: 't5', name: 'นางสาวศุภาวณีย์ ระคนจันทร์', short: 'ครูศุภาวณีย์', homeroom: 'ป.5' },
+                { id: 't6', name: 'นายสมพงษ์ จันเทศ', short: 'ครูสมพงษ์', homeroom: 'ป.6' }
+            ],
+            subjects: [
+                { id: 's1', code: 'ท11101', name: 'ภาษาไทย', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
+                { id: 's2', code: 'ค11101', name: 'คณิตศาสตร์', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 5, hrSem: 100, hrYear: 200, teacherId: 't1' },
+                { id: 's3', code: 'อ11101', name: 'ภาษาอังกฤษ', type: 'พื้นฐาน', class: 'ป.1', hrWeek: 4, hrSem: 80, hrYear: 160, teacherId: 't1' }
+            ],
+            rooms: [
+                { id: 'r1', name: 'ห้อง ป.1', allowShare: false },
+                { id: 'r2', name: 'ห้อง ป.2', allowShare: false },
+                { id: 'r3', name: 'ห้อง ป.3', allowShare: false },
+                { id: 'r4', name: 'ห้อง ป.4', allowShare: false },
+                { id: 'r5', name: 'ห้อง ป.5', allowShare: false },
+                { id: 'r6', name: 'ห้อง ป.6', allowShare: false },
+                { id: 'r_com', name: 'ห้องคอม', allowShare: false },
+                { id: 'r_field', name: 'สนาม', allowShare: true }
+            ],
+            schedule: {}, // Format: { "ป.1_จันทร์_1": "s1" }
+            roomSchedule: {}, // Format: { "ป.1_จันทร์_1": "r1" }
+            wallpapers: {} 
+        };
+
+        let appData = {};
+
+        // --- UI UTILS (Loaders, Toasts, Modals) ---
+        function showLoader(text) {
+            document.getElementById('loader-text').innerText = text;
+            document.getElementById('loader').classList.remove('hidden');
+        }
+        function hideLoader() {
+            document.getElementById('loader').classList.add('hidden');
+        }
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            
+            if(type === 'success') {
+                toast.className = "fixed top-5 right-5 z-[100] px-6 py-3 rounded shadow-lg transform transition-all duration-300 translate-x-0 opacity-100 flex items-center space-x-2 text-white font-bold bg-green-600";
+                document.getElementById('toast-icon').className = "fa-solid fa-check-circle";
+            } else {
+                toast.className = "fixed top-5 right-5 z-[100] px-6 py-3 rounded shadow-lg transform transition-all duration-300 translate-x-0 opacity-100 flex items-center space-x-2 text-white font-bold bg-red-600";
+                document.getElementById('toast-icon').className = "fa-solid fa-times-circle";
+            }
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0', 'opacity-100');
+                toast.classList.add('translate-x-full', 'opacity-0');
+            }, 4000);
+        }
+        function customConfirm(msg, callback) {
+            document.getElementById('confirm-msg').innerText = msg;
+            document.getElementById('custom-confirm').classList.remove('hidden');
+            const btn = document.getElementById('confirm-btn-yes');
+            btn.onclick = () => {
+                closeConfirm();
+                callback();
+            };
+        }
+        function closeConfirm() {
+            document.getElementById('custom-confirm').classList.add('hidden');
+        }
+
+        // --- 2. API INTEGRATION (Fetch API for GitHub) ---
+        function loadDataFromAPI() {
+            showLoader("กำลังดึงข้อมูลจาก Cloud...");
+            
+            if (GAS_API_URL === "" || GAS_API_URL.includes("ใส่_WEB_APP_URL")) {
+                showToast("ยังไม่ได้ใส่ GAS_API_URL ทำงานในโหมดออฟไลน์", "error");
+                appData = JSON.parse(JSON.stringify(defaultData));
+                finalizeInit();
+                hideLoader();
+                return;
+            }
+
+            fetch(GAS_API_URL)
+                .then(response => response.json())
+                .then(result => {
+                    if (result && result.status === 'success' && result.data) {
+                        appData = result.data;
+                    } else {
+                        appData = JSON.parse(JSON.stringify(defaultData));
+                    }
+                    
+                    if(!appData.rooms) appData.rooms = defaultData.rooms;
+                    if(!appData.roomSchedule) appData.roomSchedule = {};
+                    if(!appData.wallpapers) appData.wallpapers = {};
+
+                    finalizeInit();
+                    hideLoader();
+                })
+                .catch(error => {
+                    console.error("Fetch error:", error);
+                    showToast("ดึงข้อมูลล้มเหลว ทำงานในโหมดออฟไลน์", "error");
+                    appData = JSON.parse(JSON.stringify(defaultData));
+                    finalizeInit();
+                    hideLoader();
+                });
+        }
+
+        function saveDataAPI() {
+            if (GAS_API_URL === "" || GAS_API_URL.includes("ใส่_WEB_APP_URL")) {
+                showToast("จำลองการบันทึกสำเร็จ (ยังไม่ได้เชื่อมต่อ Cloud)", "success");
+                return;
+            }
+
+            showLoader("กำลังบันทึกข้อมูลขึ้น Cloud...");
+            
+            fetch(GAS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(appData)
+            })
+            .then(response => response.json())
+            .then(result => {
+                hideLoader();
+                if (result.status === 'success') {
+                    showToast("บันทึกข้อมูลลง Cloud สำเร็จ", "success");
+                } else {
+                    showToast("เกิดข้อผิดพลาดจากเซิร์ฟเวอร์", "error");
+                }
+            })
+            .catch(error => {
+                console.error("Save error:", error);
+                hideLoader();
+                showToast("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้", "error");
+            });
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // --- 3. CORE INIT ---
+        function finalizeInit() {
+            document.getElementById('set-year').value = appData.settings.year;
+            document.getElementById('set-term').value = appData.settings.term;
+            document.getElementById('set-school').value = appData.settings.schoolName;
+            document.getElementById('set-director').value = appData.settings.director;
+
+            updateGlobalDropdowns();
+
+            document.getElementById('system-info-badge').innerText = `ปีการศึกษา ${appData.settings.year} / ภาคเรียนที่ ${appData.settings.term}`;
+            
+            renderSubjectsTable();
+            renderTeachersTable();
+            renderRoomsTable();
+            renderTimetableView();
+            renderBuilder();
+        }
+
+        function updateGlobalDropdowns() {
+            let viewHtml = `<optgroup label="ตารางเรียน (ตามห้อง)">`;
+            appData.classes.forEach(c => viewHtml += `<option value="class_${c}">ชั้น ${c}</option>`);
+            viewHtml += `</optgroup><optgroup label="ตารางสอน (ตามครู)">`;
+            appData.teachers.forEach(t => viewHtml += `<option value="teacher_${t.id}">${t.name}</option>`);
+            viewHtml += `</optgroup><optgroup label="ตารางการใช้ห้อง">`;
+            appData.rooms.forEach(r => viewHtml += `<option value="room_${r.id}">${r.name}</option>`);
+            viewHtml += `</optgroup>`;
+            document.getElementById('view-type').innerHTML = viewHtml;
+
+            let buildHtml = '';
+            appData.classes.forEach(c => buildHtml += `<option value="${c}">ชั้น ${c}</option>`);
+            document.getElementById('build-class-select').innerHTML = buildHtml;
+            document.getElementById('wallpaper-class').innerHTML = buildHtml;
+
+            let subjTeacherHtml = '';
+            appData.teachers.forEach(t => subjTeacherHtml += `<option value="${t.id}">${t.short} (${t.name})</option>`);
+            document.getElementById('subj-teacher').innerHTML = subjTeacherHtml;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-slate-700', 'border-blue-500');
+                el.classList.add('border-transparent');
+            });
+            event.currentTarget.classList.add('bg-slate-700', 'border-blue-500');
+            event.currentTarget.classList.remove('border-transparent');
+            
+            document.getElementById('page-title').innerText = event.currentTarget.innerText;
+
+            if(tabId === 'view-schedule') renderTimetableView();
+            if(tabId === 'build-schedule') renderBuilder();
+        }
+
+        function getSubject(id) { return appData.subjects.find(s => s.id === id); }
+        function getTeacher(id) { return appData.teachers.find(t => t.id === id); }
+        function getRoom(id) { return appData.rooms.find(r => r.id === id); }
+
+        // --- 4. TIMETABLE VIEW LOGIC ---
+        function renderTimetableView() {
+            const viewType = document.getElementById('view-type').value;
+            if(!viewType) return;
+
+            const table = document.getElementById('timetable-display');
+            const [type, target] = viewType.split('_');
+            
+            let titleText = '';
+            let sigTeacherName = '..........................';
+            let sigTeacherRole = 'ครูประจำชั้น';
+
+            if (type === 'class') {
+                titleText = `ตารางเรียน ชั้นประถมศึกษาปีที่ ${target.replace('ป.','')}`;
+                const homeroomTeacher = appData.teachers.find(t => t.homeroom === target);
+                if (homeroomTeacher) sigTeacherName = homeroomTeacher.name;
+            } else if (type === 'teacher') {
+                titleText = `ตารางสอนของ ${getTeacher(target)?.name || ''}`;
+                sigTeacherName = getTeacher(target)?.name || '';
+                sigTeacherRole = 'ครูผู้สอน';
+            } else if (type === 'room') {
+                titleText = `ตารางการใช้ห้อง ${getRoom(target)?.name || ''}`;
+                sigTeacherRole = 'ผู้รับผิดชอบห้อง';
+            }
+
+            document.getElementById('print-title').innerText = titleText;
+            document.getElementById('print-subtitle').innerText = `ภาคเรียนที่ ${appData.settings.term} ปีการศึกษา ${appData.settings.year} โรงเรียน${appData.settings.schoolName}`;
+            document.getElementById('sig-teacher-name').innerText = sigTeacherName;
+            document.getElementById('sig-teacher-role').innerText = sigTeacherRole;
+            document.getElementById('sig-director-name').innerText = appData.settings.director;
+
+            let html = `<thead><tr><th rowspan="2" class="w-1/12">วัน</th><th rowspan="2" class="w-1/12">โฮมรูม<br><span class="text-xs font-normal">08.00-08.30</span></th>`;
+            
+            appData.periods.forEach(p => {
+                if(p.id === 'lunch') html += `<th rowspan="2" class="w-1/12">พักกลางวัน<br><span class="text-xs font-normal">${p.start}-${p.end}</span></th>`;
+                else html += `<th>คาบที่ ${p.id}</th>`;
+            });
+            html += `</tr><tr>`;
+            appData.periods.forEach(p => {
+                if(p.id !== 'lunch') html += `<th class="text-xs font-normal">${p.start} - ${p.end} น.</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            appData.days.forEach(day => {
+                html += `<tr><td class="font-bold">${day}</td><td class="bg-blue-50">โฮมรูม</td>`;
+                
+                let skipPeriods = 0;
+                let regularPeriodsCount = appData.periods.filter(p => p.id !== 'lunch').length;
+                let periodIndex = 1;
+
+                appData.periods.forEach((p, idx) => {
+                    if (p.id === 'lunch') { html += `<td class="bg-gray-100">พัก</td>`; return; }
+                    if (skipPeriods > 0) { skipPeriods--; periodIndex++; return; }
+
+                    let subjectObj = null;
+                    let displayRoom = null;
+
+                    if (type === 'class') {
+                        const cellKey = `${target}_${day}_${periodIndex}`;
+                        const subjId = appData.schedule[cellKey];
+                        const roomId = appData.roomSchedule[cellKey];
+                        if(subjId) subjectObj = getSubject(subjId);
+                        if(roomId) displayRoom = getRoom(roomId);
+                    } else if (type === 'teacher') {
+                        const key = Object.keys(appData.schedule).find(k => k.includes(`_${day}_${periodIndex}`) && getSubject(appData.schedule[k])?.teacherId === target);
+                        if(key) {
+                            subjectObj = { ...getSubject(appData.schedule[key]) };
+                            subjectObj.showClass = key.split('_')[0]; 
+                            const roomId = appData.roomSchedule[key];
+                            if(roomId) displayRoom = getRoom(roomId);
+                        }
+                    } else if (type === 'room') {
+                        const rKey = Object.keys(appData.roomSchedule).find(k => k.endsWith(`_${day}_${periodIndex}`) && appData.roomSchedule[k] === target);
+                        if(rKey) {
+                            const cls = rKey.split('_')[0];
+                            const subjId = appData.schedule[rKey];
+                            if (subjId) {
+                                subjectObj = { ...getSubject(subjId) };
+                                subjectObj.showClass = cls;
+                            } else {
+                                subjectObj = { name: 'จองห้อง', showClass: cls, teacherId: null };
+                            }
+                        }
+                    }
+
+                    let colspan = 1;
+                    if (subjectObj) {
+                        for (let next = periodIndex + 1; next <= regularPeriodsCount; next++) {
+                            let nextSubjObj = null;
+                            let nextRoomId = null;
+
+                            if (type === 'class') {
+                                const nextKey = `${target}_${day}_${next}`;
+                                const nextId = appData.schedule[nextKey];
+                                if(nextId) nextSubjObj = getSubject(nextId);
+                                nextRoomId = appData.roomSchedule[nextKey];
+                            } else if (type === 'teacher') {
+                                const nextKey = Object.keys(appData.schedule).find(k => k.includes(`_${day}_${next}`) && getSubject(appData.schedule[k])?.teacherId === target);
+                                if(nextKey) {
+                                    nextSubjObj = getSubject(appData.schedule[nextKey]);
+                                    nextRoomId = appData.roomSchedule[nextKey];
+                                }
+                            } else if (type === 'room') {
+                                const nextKey = Object.keys(appData.roomSchedule).find(k => k.endsWith(`_${day}_${next}`) && appData.roomSchedule[k] === target);
+                                if(nextKey) nextSubjObj = getSubject(appData.schedule[nextKey]) || { id: 'booking' };
+                            }
+
+                            const currentRoomId = displayRoom ? displayRoom.id : null;
+
+                            if (nextSubjObj && nextSubjObj.id === subjectObj.id && nextRoomId === currentRoomId) {
+                                colspan++;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    skipPeriods = colspan - 1;
+
+                    if (subjectObj) {
+                        let teacher = subjectObj.teacherId ? getTeacher(subjectObj.teacherId) : null;
+                        let subText = type === 'class' ? (teacher ? teacher.short : '') : subjectObj.showClass;
+                        let roomText = (type !== 'room' && displayRoom) ? `<br><span class="text-[10px] text-blue-700">(${displayRoom.name})</span>` : '';
+
+                        html += `<td colspan="${colspan}" class="p-2 font-medium bg-white leading-tight">
+                                    ${subjectObj.name}
+                                    <br><span class="text-[11px] text-gray-600">${subText}</span>
+                                    ${roomText}
+                                 </td>`;
+                    } else {
+                        html += `<td class="text-gray-300 bg-white">-</td>`;
+                    }
+                    periodIndex++;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        // --- 5. BUILDER LOGIC ---
+        function renderBuilder() {
+            const currentClass = document.getElementById('build-class-select').value;
+            const table = document.getElementById('builder-table');
+            const classSubjects = appData.subjects.filter(s => s.class === currentClass);
+            
+            let scheduledCount = {};
+            let totalScheduled = 0;
+            classSubjects.forEach(s => scheduledCount[s.id] = 0);
+
+            for (const key in appData.schedule) {
+                if (key.startsWith(currentClass)) {
+                    const sId = appData.schedule[key];
+                    if (scheduledCount[sId] !== undefined) {
+                        scheduledCount[sId]++;
+                        totalScheduled++;
+                    }
+                }
+            }
+            document.getElementById('scheduled-hours-count').innerText = totalScheduled;
+
+            let listHtml = '';
+            classSubjects.forEach(s => {
+                let current = scheduledCount[s.id];
+                let max = s.hrWeek;
+                if (current < max) {
+                    let t = getTeacher(s.teacherId);
+                    listHtml += `<div class="flex justify-between border-b border-gray-200 pb-1">
+                                    <span>${s.name} (${t ? t.short : 'ไม่มีครู'})</span>
+                                    <span class="text-red-500 font-bold">${current}/${max}</span>
+                                 </div>`;
+                }
+            });
+            if(listHtml === '') listHtml = '<div class="text-green-600 text-center py-4"><i class="fa-solid fa-check-circle"></i> จัดครบทุกวิชาแล้ว</div>';
+            document.getElementById('remaining-subjects-list').innerHTML = listHtml;
+
+            let html = `<thead><tr><th>วัน</th>`;
+            appData.periods.filter(p=>p.id!=='lunch').forEach(p => html += `<th>คาบ ${p.id}</th>`);
+            html += `</tr></thead><tbody>`;
+
+            appData.days.forEach(day => {
+                html += `<tr><td class="font-bold text-center">${day}</td>`;
+                appData.periods.filter(p=>p.id!=='lunch').forEach(p => {
+                    const cellKey = `${currentClass}_${day}_${p.id}`;
+                    const currentSubjVal = appData.schedule[cellKey] || "";
+                    const currentRoomVal = appData.roomSchedule[cellKey] || "";
+                    
+                    let subjOptionsHtml = `<option value="">-- ว่าง --</option>`;
+                    classSubjects.forEach(s => {
+                        let isFull = scheduledCount[s.id] >= s.hrWeek;
+                        let isSelected = currentSubjVal === s.id;
+                        if (!isFull || isSelected) {
+                            let selectedStr = isSelected ? 'selected' : '';
+                            subjOptionsHtml += `<option value="${s.id}" ${selectedStr}>${s.name}</option>`;
+                        }
+                    });
+
+                    let roomOptionsHtml = `<option value="">-- ไม่ระบุห้อง --</option>`;
+                    appData.rooms.forEach(r => {
+                        let selectedStr = (currentRoomVal === r.id) ? 'selected' : '';
+                        roomOptionsHtml += `<option value="${r.id}" ${selectedStr}>${r.name}</option>`;
+                    });
+
+                    html += `<td class="p-1 align-top bg-white">
+                                <div class="flex flex-col space-y-1">
+                                    <select class="w-full border p-1 text-xs rounded bg-white font-bold text-blue-800" onchange="updateSchedule('${cellKey}', this.value)">
+                                        ${subjOptionsHtml}
+                                    </select>
+                                    <select class="w-full border p-1 text-[10px] rounded bg-gray-50 text-gray-600" onchange="updateRoom('${cellKey}', this, this.value, '${currentRoomVal}')">
+                                        ${roomOptionsHtml}
+                                    </select>
+                                </div>
+                             </td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        function updateSchedule(key, subjectId) {
+            if (subjectId === "") {
+                delete appData.schedule[key];
+                delete appData.roomSchedule[key]; 
+            } else {
+                appData.schedule[key] = subjectId;
+                if (!appData.roomSchedule[key]) {
+                    const cls = key.split('_')[0];
+                    const defaultRoom = appData.rooms.find(r => r.name.includes(cls));
+                    if (defaultRoom) updateRoom(key, null, defaultRoom.id, "");
+                }
+            }
+            renderBuilder(); 
+        }
+
+        function updateRoom(key, selectElement, roomId, previousValue) {
+            if (!roomId) {
+                delete appData.roomSchedule[key];
+                return;
+            }
+
+            const [cls, day, period] = key.split('_');
+            const dayPeriod = `${day}_${period}`;
+            const room = getRoom(roomId);
+
+            if (!room.allowShare) {
+                for (let rKey in appData.roomSchedule) {
+                    if (rKey !== key && rKey.endsWith(`_${dayPeriod}`) && appData.roomSchedule[rKey] === roomId) {
+                        const otherCls = rKey.split('_')[0];
+                        showToast(`จัดไม่ได้! ${room.name} ถูกจองใช้โดยชั้น ${otherCls} ในคาบนี้แล้ว`, 'error');
+                        if(selectElement) selectElement.value = previousValue; 
+                        return;
+                    }
+                }
+            }
+
+            appData.roomSchedule[key] = roomId;
+            if(!selectElement) renderBuilder(); 
+        }
+
+        // --- 6. MANAGE SUBJECTS ---
+        function renderSubjectsTable() {
+            let html = '';
+            appData.subjects.forEach(s => {
+                let t = getTeacher(s.teacherId);
+                html += `<tr class="border-b hover:bg-gray-50 bg-white">
+                            <td class="p-2 border">${s.code}</td>
+                            <td class="p-2 border">${s.name}</td>
+                            <td class="p-2 border">${s.type}</td>
+                            <td class="p-2 border">${s.class}</td>
+                            <td class="p-2 border text-center">${s.hrWeek}</td>
+                            <td class="p-2 border text-center">${s.hrSem}</td>
+                            <td class="p-2 border text-center">${s.hrYear}</td>
+                            <td class="p-2 border">${t ? t.short : '-'}</td>
+                            <td class="p-2 border text-center space-x-2">
+                                <button onclick="openSubjectModal('${s.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-edit"></i></button>
+                                <button onclick="deleteSubject('${s.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                         </tr>`;
+            });
+            document.getElementById('subject-table-body').innerHTML = html;
+        }
+
+        function openSubjectModal(id = null) {
+            document.getElementById('subject-modal').classList.remove('hidden');
+            if(id) {
+                document.getElementById('subject-modal-title').innerText = 'แก้ไขวิชา';
+                let s = getSubject(id);
+                document.getElementById('subj-id').value = s.id;
+                document.getElementById('subj-code').value = s.code;
+                document.getElementById('subj-name').value = s.name;
+                document.getElementById('subj-type').value = s.type;
+                document.getElementById('subj-class').value = s.class;
+                document.getElementById('subj-hrWeek').value = s.hrWeek;
+                document.getElementById('subj-hrSem').value = s.hrSem;
+                document.getElementById('subj-hrYear').value = s.hrYear;
+                document.getElementById('subj-teacher').value = s.teacherId;
+            } else {
+                document.getElementById('subject-modal-title').innerText = 'เพิ่มวิชาใหม่';
+                document.getElementById('subj-id').value = '';
+                document.getElementById('subj-code').value = '';
+                document.getElementById('subj-name').value = '';
+            }
+        }
+        function closeSubjectModal() { document.getElementById('subject-modal').classList.add('hidden'); }
+
+        function saveSubjectForm() {
+            let id = document.getElementById('subj-id').value;
+            let data = {
+                id: id || generateId(),
+                code: document.getElementById('subj-code').value,
+                name: document.getElementById('subj-name').value,
+                type: document.getElementById('subj-type').value,
+                class: document.getElementById('subj-class').value,
+                hrWeek: parseInt(document.getElementById('subj-hrWeek').value),
+                hrSem: parseInt(document.getElementById('subj-hrSem').value),
+                hrYear: parseInt(document.getElementById('subj-hrYear').value),
+                teacherId: document.getElementById('subj-teacher').value
+            };
+            if(!data.name) return showToast("กรุณาใส่ชื่อวิชา", "error");
+
+            if(id) {
+                let index = appData.subjects.findIndex(s => s.id === id);
+                appData.subjects[index] = data;
+            } else {
+                appData.subjects.push(data);
+            }
+            saveDataAPI();
+            renderSubjectsTable();
+            closeSubjectModal();
+        }
+
+        function deleteSubject(id) {
+            customConfirm("ต้องการลบวิชานี้ใช่หรือไม่? (การลบจะทำให้ตารางสอนที่จัดไว้ช่องนี้หายไปด้วย)", () => {
+                appData.subjects = appData.subjects.filter(s => s.id !== id);
+                for (const key in appData.schedule) {
+                    if(appData.schedule[key] === id) {
+                        delete appData.schedule[key];
+                        delete appData.roomSchedule[key];
+                    }
+                }
+                saveDataAPI();
+                renderSubjectsTable();
+            });
+        }
+
+        // --- 7. MANAGE TEACHERS ---
+        function renderTeachersTable() {
+            let html = '';
+            appData.teachers.forEach((t, i) => {
+                html += `<tr class="border-b hover:bg-gray-50 bg-white">
+                            <td class="p-2 border text-center">${i+1}</td>
+                            <td class="p-2 border">${t.name}</td>
+                            <td class="p-2 border">${t.short}</td>
+                            <td class="p-2 border text-center">${t.homeroom || '-'}</td>
+                            <td class="p-2 border text-center space-x-2">
+                                <button onclick="openTeacherModal('${t.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-edit"></i></button>
+                                <button onclick="deleteTeacher('${t.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                         </tr>`;
+            });
+            document.getElementById('teacher-table-body').innerHTML = html;
+        }
+
+        function openTeacherModal(id = null) {
+            document.getElementById('teacher-modal').classList.remove('hidden');
+            if(id) {
+                document.getElementById('teacher-modal-title').innerText = 'แก้ไขครู';
+                let t = getTeacher(id);
+                document.getElementById('teacher-id').value = t.id;
+                document.getElementById('teacher-name').value = t.name;
+                document.getElementById('teacher-short').value = t.short;
+                document.getElementById('teacher-homeroom').value = t.homeroom;
+            } else {
+                document.getElementById('teacher-modal-title').innerText = 'เพิ่มครูใหม่';
+                document.getElementById('teacher-id').value = '';
+                document.getElementById('teacher-name').value = '';
+                document.getElementById('teacher-short').value = '';
+                document.getElementById('teacher-homeroom').value = '';
+            }
+        }
+        function closeTeacherModal() { document.getElementById('teacher-modal').classList.add('hidden'); }
+
+        function saveTeacherForm() {
+            let id = document.getElementById('teacher-id').value;
+            let data = {
+                id: id || generateId(),
+                name: document.getElementById('teacher-name').value,
+                short: document.getElementById('teacher-short').value,
+                homeroom: document.getElementById('teacher-homeroom').value
+            };
+            if(!data.name || !data.short) return showToast("กรุณาใส่ชื่อและชื่อย่อให้ครบถ้วน", "error");
+
+            if(id) {
+                let index = appData.teachers.findIndex(t => t.id === id);
+                appData.teachers[index] = data;
+            } else {
+                appData.teachers.push(data);
+            }
+            saveDataAPI();
+            updateGlobalDropdowns();
+            renderTeachersTable();
+            closeTeacherModal();
+        }
+
+        function deleteTeacher(id) {
+            customConfirm("ต้องการลบข้อมูลครูท่านนี้ใช่หรือไม่?", () => {
+                appData.teachers = appData.teachers.filter(t => t.id !== id);
+                saveDataAPI();
+                updateGlobalDropdowns();
+                renderTeachersTable();
+            });
+        }
+
+        // --- 7.5 MANAGE ROOMS ---
+        function renderRoomsTable() {
+            let html = '';
+            appData.rooms.forEach((r, i) => {
+                html += `<tr class="border-b hover:bg-gray-50 bg-white">
+                            <td class="p-2 border text-center">${i+1}</td>
+                            <td class="p-2 border">${r.name}</td>
+                            <td class="p-2 border text-center">${r.allowShare ? '<span class="text-green-600"><i class="fa-solid fa-check"></i> ใช้ร่วมได้</span>' : '<span class="text-red-600"><i class="fa-solid fa-ban"></i> ไม่ได้</span>'}</td>
+                            <td class="p-2 border text-center space-x-2">
+                                <button onclick="openRoomModal('${r.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-edit"></i></button>
+                                <button onclick="deleteRoom('${r.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                         </tr>`;
+            });
+            document.getElementById('room-table-body').innerHTML = html;
+        }
+
+        function openRoomModal(id = null) {
+            document.getElementById('room-modal').classList.remove('hidden');
+            if(id) {
+                document.getElementById('room-modal-title').innerText = 'แก้ไขห้องเรียน';
+                let r = getRoom(id);
+                document.getElementById('room-id').value = r.id;
+                document.getElementById('room-name').value = r.name;
+                document.getElementById('room-allow-share').checked = r.allowShare;
+            } else {
+                document.getElementById('room-modal-title').innerText = 'เพิ่มห้องเรียนใหม่';
+                document.getElementById('room-id').value = '';
+                document.getElementById('room-name').value = '';
+                document.getElementById('room-allow-share').checked = false;
+            }
+        }
+        function closeRoomModal() { document.getElementById('room-modal').classList.add('hidden'); }
+
+        function saveRoomForm() {
+            let id = document.getElementById('room-id').value;
+            let data = {
+                id: id || generateId(),
+                name: document.getElementById('room-name').value,
+                allowShare: document.getElementById('room-allow-share').checked
+            };
+            if(!data.name) return showToast("กรุณาใส่ชื่อห้อง", "error");
+
+            if(id) {
+                let index = appData.rooms.findIndex(r => r.id === id);
+                appData.rooms[index] = data;
+            } else {
+                appData.rooms.push(data);
+            }
+            saveDataAPI();
+            updateGlobalDropdowns();
+            renderRoomsTable();
+            closeRoomModal();
+        }
+
+        function deleteRoom(id) {
+            customConfirm("ต้องการลบห้องนี้ใช่หรือไม่? ข้อมูลการจองห้องนี้ในตารางจะถูกลบไปด้วย", () => {
+                appData.rooms = appData.rooms.filter(r => r.id !== id);
+                for (const key in appData.roomSchedule) {
+                    if(appData.roomSchedule[key] === id) delete appData.roomSchedule[key];
+                }
+                saveDataAPI();
+                updateGlobalDropdowns();
+                renderRoomsTable();
+            });
+        }
+
+        // --- 8. SETTINGS ---
+        function saveSettings() {
+            appData.settings.year = document.getElementById('set-year').value;
+            appData.settings.term = document.getElementById('set-term').value;
+            appData.settings.schoolName = document.getElementById('set-school').value;
+            appData.settings.director = document.getElementById('set-director').value;
+            saveDataAPI();
+            finalizeInit();
+        }
+
+        // --- 9. MOBILE WALLPAPER (Resizing to 9:16 before saving) ---
+        function handleBgUpload(event) {
+            const cls = document.getElementById('wallpaper-class').value;
+            const file = event.target.files[0];
+            
+            if(file) {
+                showLoader("กำลังบีบอัดและประมวลผลรูปภาพ 9:16...");
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // สร้าง Canvas ขนาด 1080x1920 (9:16)
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const targetWidth = 1080;
+                        const targetHeight = 1920;
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
+                        
+                        // คำนวณ Crop ให้ภาพพอดีสัดส่วนเป๊ะๆ แบบ Background Cover
+                        const srcRatio = img.width / img.height;
+                        const targetRatio = targetWidth / targetHeight;
+                        let sWidth = img.width, sHeight = img.height;
+                        let sx = 0, sy = 0;
+                        
+                        if (srcRatio > targetRatio) {
+                            sWidth = img.height * targetRatio;
+                            sx = (img.width - sWidth) / 2;
+                        } else {
+                            sHeight = img.width / targetRatio;
+                            sy = (img.height - sHeight) / 2;
+                        }
+                        
+                        // วาดภาพลง Canvas
+                        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+                        
+                        // แปลงเป็น Base64 แบบ JPEG พร้อมลดขนาดเพื่อให้เก็บลงฐานข้อมูลได้
+                        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        
+                        const dateStr = new Date().toLocaleString('th-TH');
+                        if(!appData.wallpapers) appData.wallpapers = {};
+                        appData.wallpapers[cls] = { url: resizedBase64, date: dateStr };
+                        
+                        // บันทึกลง Cloud
+                        saveDataAPI(); 
+                        
+                        // อัปเดตหน้าจอ
+                        document.getElementById('bg-upload-status').innerText = `อัพโหลดล่าสุด: ${dateStr}`;
+                        document.getElementById('wallpaper-export-area').style.backgroundImage = `url('${resizedBase64}')`;
+                        
+                        hideLoader();
+                    };
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderMobileWallpaper() {
+            const cls = document.getElementById('wallpaper-class').value;
+            document.getElementById('wp-title').innerText = `ตารางเรียน ${cls}`;
+            document.getElementById('wp-school-name').innerText = appData.settings.schoolName;
+            
+            const wpData = (appData.wallpapers && appData.wallpapers[cls]) ? appData.wallpapers[cls] : null;
+            if(wpData && wpData.url) {
+                document.getElementById('wallpaper-export-area').style.backgroundImage = `url('${wpData.url}')`;
+                document.getElementById('bg-upload-status').innerText = `อัพโหลดล่าสุด: ${wpData.date}`;
+            } else {
+                document.getElementById('wallpaper-export-area').style.backgroundImage = `url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1080')`;
+                document.getElementById('bg-upload-status').innerText = `ยังไม่มีภาพพื้นหลัง (อัพโหลดล่าสุด: -)`;
+            }
+
+            const table = document.getElementById('wp-table');
+            let html = `<thead><tr class="bg-gray-200"><th class="p-2 border-2 border-black">วัน</th>`;
+            appData.periods.filter(p=>p.id!=='lunch').forEach(p => html += `<th class="p-2 border-2 border-black">${p.id}</th>`);
+            html += `</tr></thead><tbody>`;
+
+            appData.days.forEach(day => {
+                html += `<tr><td class="p-2 border-2 border-black font-bold bg-white">${day}</td>`;
+                
+                let skipPeriods = 0;
+                let regularPeriodsCount = appData.periods.filter(p => p.id !== 'lunch').length;
+                let periodIndex = 1;
+
+                appData.periods.forEach(p => {
+                    if(p.id === 'lunch') return;
+                    if(skipPeriods > 0) { skipPeriods--; periodIndex++; return; }
+
+                    const subjId = appData.schedule[`${cls}_${day}_${periodIndex}`];
+                    let subjectObj = subjId ? getSubject(subjId) : null;
+                    let colspan = 1;
+
+                    if (subjectObj) {
+                        for (let next = periodIndex + 1; next <= regularPeriodsCount; next++) {
+                            const nextId = appData.schedule[`${cls}_${day}_${next}`];
+                            if (nextId && getSubject(nextId).id === subjectObj.id) colspan++;
+                            else break;
+                        }
+                    }
+
+                    skipPeriods = colspan - 1;
+
+                    if(subjectObj) {
+                        html += `<td colspan="${colspan}" class="p-2 border-2 border-black text-lg bg-white">${subjectObj.name}</td>`;
+                    } else {
+                        html += `<td class="p-2 border-2 border-black bg-white">-</td>`;
+                    }
+                    periodIndex++;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        // --- 10. EXPORT IMAGE ---
+        function exportImage(wrapperId, type = 'timetable') {
+            const wrapper = document.getElementById(wrapperId);
+            let elementToCapture = wrapper;
+            
+            let oldScale = '';
+            
+            if(type === 'wallpaper') {
+                // ข้ามการแคปเจอร์ Wrapper เพื่อไปแคปเจอร์ตัวเต็ม 1080x1920 ด้านใน
+                elementToCapture = document.getElementById('wallpaper-export-area');
+                oldScale = elementToCapture.style.transform;
+                // ปลด scale เพื่อให้ html2canvas เจอไซส์ 1080x1920 เต็มๆ
+                elementToCapture.style.transform = 'scale(1)'; 
+            }
+
+            // ถ้าเป็นตารางเรียนปกติ เร่งความชัดเป็น 2 เท่า, ถ้าเป็นวอลเปเปอร์ตั้งไว้ 1 (ได้ 1080x1920 สวยๆพอดี)
+            let exportScale = type === 'wallpaper' ? 1 : 2;
+
+            html2canvas(elementToCapture, { scale: exportScale, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
+                if(type === 'wallpaper') {
+                    // คืนค่า Scale กลับเหมือนเดิมหลังจากแคปเจอร์เสร็จ
+                    elementToCapture.style.transform = oldScale;
+                }
+
+                const link = document.createElement('a');
+                link.download = `exported_${type}_${new Date().getTime()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        // Boot
+        window.onload = () => {
+            loadDataFromAPI(); 
+            switchTab('view-schedule'); 
+        };
+    </script>
+</body>
+</html>

@@ -213,22 +213,23 @@
                 </div>
 
                 <div class="overflow-x-auto bg-gray-200 p-8 flex justify-center">
-                    <!-- พื้นที่จัดวางแบบบังคับขนาด A4 -->
+                    <!-- พื้นที่จัดวางแบบบังคับขนาด A4 และจัดองค์ประกอบด้วย Flex -->
                     <div id="printable-area" class="a4-landscape">
-                        <div class="flex-1 flex flex-col h-full">
-                            <div class="text-center mb-4 flex-shrink-0">
-                                <h2 class="text-2xl font-bold" id="print-title">ตารางเรียน</h2>
-                                <h3 class="text-lg" id="print-subtitle">ภาคเรียนที่ - ปีการศึกษา - โรงเรียน -</h3>
-                            </div>
-                            
-                            <div class="flex-1 min-h-0 w-full pb-2">
-                                <table class="table-bold text-sm w-full h-full" id="timetable-display">
-                                    <!-- Injected via JS -->
-                                </table>
-                            </div>
+                        <!-- ส่วนหัว -->
+                        <div class="text-center mb-2 flex-shrink-0">
+                            <h2 class="text-2xl font-bold" id="print-title">ตารางเรียน</h2>
+                            <h3 class="text-lg" id="print-subtitle">ภาคเรียนที่ - ปีการศึกษา - โรงเรียน -</h3>
+                        </div>
+                        
+                        <!-- ส่วนตารางที่ยืดหยุ่นพื้นที่ตรงกลาง -->
+                        <div class="flex-1 flex flex-col justify-center min-h-0 w-full pb-2">
+                            <table class="table-bold text-sm w-full h-full" id="timetable-display">
+                                <!-- Injected via JS -->
+                            </table>
                         </div>
 
-                        <div class="flex justify-between mt-4 px-12 text-center flex-shrink-0" id="signatures-area">
+                        <!-- ส่วนลายเซ็น ถูกดันลงล่างสุดเสมอ -->
+                        <div class="flex justify-between mt-2 px-12 text-center flex-shrink-0" id="signatures-area">
                             <div>
                                 <p>ลงชื่อ..................................................</p>
                                 <p class="mt-2">(<span id="sig-teacher-name">นาย/นาง...</span>)</p>
@@ -739,8 +740,8 @@
                 { id: 'r_field', name: 'สนาม', allowShare: true }
             ],
             schedule: {}, 
-            slotTeacher: {}, // เก็บข้อมูลครูเฉพาะคาบคนที่ 1
-            slotTeacher2: {}, // เก็บข้อมูลครูเฉพาะคาบคนที่ 2
+            slotTeacher: {}, 
+            slotTeacher2: {}, 
             roomSchedule: {},
             wallpapers: {} 
         };
@@ -868,18 +869,15 @@
                         appData = JSON.parse(JSON.stringify(defaultData));
                     }
                     
-                    // Migrations to avoid breaking old data structures
                     if(!appData.rooms) appData.rooms = defaultData.rooms;
                     if(!appData.roomSchedule) appData.roomSchedule = {};
                     if(!appData.wallpapers) appData.wallpapers = {};
                     if(!appData.slotTeacher2) appData.slotTeacher2 = {};
                     
-                    // Period Upgrade check
                     if(appData.periods && appData.periods.length > 0 && !appData.periods[0].hasOwnProperty('isBreak')) {
                         appData.periods = defaultData.periods;
                     }
 
-                    // Migration for slotTeacher
                     if(!appData.slotTeacher) {
                         appData.slotTeacher = {};
                         if(appData.schedule) {
@@ -891,7 +889,16 @@
                         }
                     }
 
-                    // Force Subject Update if empty (Migration safety)
+                    if (Object.keys(appData.roomSchedule).length === 0 && Object.keys(appData.schedule).length > 0) {
+                        for (let k in appData.schedule) {
+                            const cls = k.split('_')[0];
+                            const defaultRoom = appData.rooms.find(r => r.name.includes(cls));
+                            if (defaultRoom) {
+                                appData.roomSchedule[k] = defaultRoom.id;
+                            }
+                        }
+                    }
+
                     if(!appData.subjects || appData.subjects.length < 50) {
                         appData.subjects = defaultData.subjects;
                         appData.teachers = defaultData.teachers;
@@ -1147,6 +1154,7 @@
                             actualTeacherId2 = (appData.slotTeacher2 && appData.slotTeacher2[cellKey] !== undefined) ? appData.slotTeacher2[cellKey] : subjectObj.teacherId2;
                             const roomId = appData.roomSchedule[cellKey];
                             if(roomId) displayRoom = getRoom(roomId);
+                            displayClass = target;
                         }
                     } else if (type === 'teacher') {
                         const cellKey = Object.keys(appData.schedule).find(k => {
@@ -1159,6 +1167,7 @@
                         if(cellKey) {
                             subjectObj = { ...getSubject(appData.schedule[cellKey]) };
                             displayClass = cellKey.split('_')[0]; 
+                            subjectObj.showClass = displayClass;
                             actualTeacherId = (appData.slotTeacher && appData.slotTeacher[cellKey] !== undefined) ? appData.slotTeacher[cellKey] : subjectObj.teacherId;
                             actualTeacherId2 = (appData.slotTeacher2 && appData.slotTeacher2[cellKey] !== undefined) ? appData.slotTeacher2[cellKey] : subjectObj.teacherId2;
                             const roomId = appData.roomSchedule[cellKey];
@@ -1170,6 +1179,7 @@
                             let classes = rKeys.map(k => k.split('_')[0]).join(', ');
                             let subj = getSubject(appData.schedule[rKeys[0]]);
                             subjectObj = subj ? { ...subj } : { name: 'ใช้ห้อง', shortName: 'ใช้ห้อง' };
+                            displayClass = classes;
                             subjectObj.showClass = classes;
                             if(rKeys.length > 1) {
                                  subjectObj.shortName = 'ใช้งานร่วม';
@@ -1219,7 +1229,7 @@
 
                             const currentRoomId = displayRoom ? displayRoom.id : null;
 
-                            // ในหน้าตารางห้อง จะผสานต่อเมื่อเป็นวิชาเดียวกัน (เพื่อความเรียบง่าย)
+                            // ในหน้าตารางห้อง จะผสานต่อเมื่อเป็นวิชาเดียวกัน
                             if (type === 'room' && nextSubjObj && nextSubjObj.id === subjectObj.id) {
                                 colspan++;
                             } else if (type !== 'room' && nextSubjObj && nextSubjObj.id === subjectObj.id && nextActualTeacherId === actualTeacherId && nextActualTeacherId2 === actualTeacherId2 && nextRoomId === currentRoomId) {
@@ -1239,8 +1249,8 @@
                         if(t1) tNames.push(t1.short);
                         if(t2) tNames.push(t2.short);
                         
-                        let subText = type === 'class' ? tNames.join('/') : subjectObj.showClass;
-                        let roomText = (type !== 'room' && displayRoom) ? `<span class="text-[10px] text-gray-600 whitespace-nowrap mt-[1px]">(${displayRoom.name})</span>` : '';
+                        let subText = type === 'class' ? tNames.join('/') : displayClass;
+                        let roomText = (type !== 'room' && displayRoom) ? `<div style="font-size: 10px; color: #dc2626; font-weight: bold; margin-top: 1px;">(${displayRoom.name})</div>` : '';
 
                         let subjName = subjectObj.shortName || subjectObj.name;
                         let titleSize = subjName.length > 15 ? 'text-[11px]' : 'text-[13px]';
@@ -1391,7 +1401,7 @@
                     }
 
                     if (ot1 === tId || ot2 === tId) {
-                        return sKey.split('_')[0]; // Return the class name that causes conflict
+                        return sKey.split('_')[0]; 
                     }
                 }
             }

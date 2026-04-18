@@ -21,19 +21,20 @@
             height: 793px; 
             margin: 0 auto; 
             background: white; 
-            padding: 40px 60px; 
+            padding: 40px 50px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             position: relative; 
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             box-sizing: border-box;
             overflow: hidden;
         }
         
         /* Clean Table Layout */
-        .table-bold { border-collapse: collapse; width: 100%; color: black; table-layout: fixed; }
-        .table-bold th, .table-bold td { border: 1px solid #000 !important; padding: 4px; text-align: center; }
-        .table-bold th { background-color: #e5e7eb; font-weight: bold; }
+        .table-bold { border-collapse: collapse; width: 100%; height: 100%; color: black; table-layout: fixed; }
+        .table-bold th, .table-bold td { border: 1px solid #000 !important; padding: 2px; text-align: center; overflow: hidden; }
+        .table-bold th { background-color: #f3f4f6; font-weight: bold; }
         
         /* Mobile Wallpaper Strict 9:16 Setup */
         .wallpaper-wrapper {
@@ -75,9 +76,9 @@
             .a4-landscape { 
                 width: 100% !important; 
                 height: 100% !important;
-                padding: 30px !important; 
+                padding: 0 !important; 
             }
-            @page { size: A4 landscape; margin: 5mm; }
+            @page { size: A4 landscape; margin: 10mm; }
             aside, header, button, #loader, #toast, #custom-confirm, #custom-alert, #login-modal { display: none !important; }
         }
         
@@ -211,22 +212,23 @@
                 </div>
 
                 <div class="overflow-x-auto bg-gray-200 p-8 flex justify-center">
-                    <!-- พื้นที่จัดวางแบบบังคับขนาด A4 และจัดองค์ประกอบด้วย Flex -->
                     <!-- พื้นที่จัดวางแบบบังคับขนาด A4 -->
                     <div id="printable-area" class="a4-landscape">
                         <!-- ส่วนหัวกระดาษ -->
-                        <div class="text-center mb-4">
+                        <div class="text-center mb-4 flex-shrink-0">
                             <h2 class="text-2xl font-bold mb-1" id="print-title">ตารางเรียน</h2>
                             <h3 class="text-lg text-gray-700" id="print-subtitle">ภาคเรียนที่ - ปีการศึกษา - โรงเรียน -</h3>
                         </div>
                         
-                        <!-- ส่วนตาราง (บังคับความสูงเพื่อไม่ให้ดันลายเซ็นตกกรอบ) -->
-                        <table class="table-bold w-full" id="timetable-display" style="height: 520px;">
-                            <!-- Injected via JS -->
-                        </table>
+                        <!-- ส่วนตาราง (ลดความสูงลงเล็กน้อยเพื่อเพิ่มระยะห่างด้านล่าง) -->
+                        <div class="w-full mb-10 mt-2">
+                            <table class="table-bold w-full" id="timetable-display" style="height: 480px;">
+                                <!-- Injected via JS -->
+                            </table>
+                        </div>
 
-                        <!-- ส่วนลายเซ็น (ยึดติดขอบล่างเสมอ) -->
-                        <div class="flex justify-between mt-auto px-16 text-center text-lg pb-4" id="signatures-area">
+                        <!-- ส่วนลายเซ็น (ปรับให้ห่างจากตารางมากขึ้น) -->
+                        <div class="flex justify-between px-20 text-center text-lg flex-shrink-0" id="signatures-area">
                             <div>
                                 <p>ลงชื่อ..................................................</p>
                                 <p class="mt-2">(<span id="sig-teacher-name">นาย/นาง...</span>)</p>
@@ -1109,7 +1111,9 @@
                 
                 if (dayIndex === 0) {
                     html += `<td rowspan="${appData.days.length}" class="bg-blue-50 border border-black text-center align-middle" style="width: 5%;">
-                                <div style="writing-mode: vertical-rl; font-size: 14px; font-weight: bold; color: #1e3a8a; margin: 0 auto; letter-spacing: 1px;">กิจกรรมหน้าเสาธงและโฮมรูม</div>
+                                <div style="position: relative; width: 100%; height: 100%; min-height: 400px;">
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font-size: 14px; font-weight: bold; color: #1e3a8a; letter-spacing: 1px;">กิจกรรมหน้าเสาธงและโฮมรูม</div>
+                                </div>
                              </td>`;
                 }
                 
@@ -1121,7 +1125,9 @@
                     if (p.isBreak) { 
                         if (dayIndex === 0) {
                             html += `<td rowspan="${appData.days.length}" class="bg-gray-100 border border-black text-center align-middle" style="width: 5%;">
-                                        <div style="writing-mode: vertical-rl; font-size: 14px; font-weight: bold; color: #374151; margin: 0 auto; letter-spacing: 1px;">${p.breakName || 'พัก'}</div>
+                                        <div style="position: relative; width: 100%; height: 100%; min-height: 400px;">
+                                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font-size: 14px; font-weight: bold; color: #374151; letter-spacing: 1px;">${p.breakName || 'พัก'}</div>
+                                        </div>
                                      </td>`;
                         }
                         continue; 
@@ -1238,11 +1244,11 @@
                         if(t2) tNames.push(t2.short);
                         
                         let subText = type === 'class' ? tNames.join('/') : displayClass;
-                        let roomText = (type !== 'room' && displayRoom) ? `<div style="font-size: 11px; color: #dc2626; font-weight: bold; margin-top: 2px;">(${displayRoom.name})</div>` : '';
+                        let roomText = (type !== 'room' && displayRoom) ? `<div style="font-size: 10px; color: #dc2626; font-weight: bold; margin-top: 1px;">(${displayRoom.name})</div>` : '';
                         let subjName = subjectObj.shortName || subjectObj.name;
 
                         // ลบ line-clamp ทิ้ง เพื่อป้องกันปัญหา html2canvas เรนเดอร์เป็นจุดๆ
-                        html += `<td colspan="${colspan}" class="bg-white border border-black align-middle text-center p-2" style="height: 80px;">
+                        html += `<td colspan="${colspan}" class="bg-white border border-black align-middle text-center p-2" style="height: 75px;">
                                     <div style="font-size: 14px; font-weight: bold; color: black; line-height: 1.2; margin-bottom: 2px;">${subjName}</div>
                                     <div style="font-size: 12px; color: #374151; line-height: 1.2;">${subText}</div>
                                     ${roomText}
